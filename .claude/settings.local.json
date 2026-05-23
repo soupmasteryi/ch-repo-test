@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd /d D:\\\\work\\\\ch-repo-test)",
+      "Bash(dir chdrawapp *)",
+      "Bash(dir .vscode)",
+      "Bash(npm install *)"
+    ]
+  }
+}

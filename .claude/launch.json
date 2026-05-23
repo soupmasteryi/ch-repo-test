@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "chdrawapp",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["start", "--prefix", "chdrawapp"],
+      "port": 3000
+    }
+  ]
+}

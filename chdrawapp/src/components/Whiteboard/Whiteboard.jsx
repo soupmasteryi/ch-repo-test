@@ -1,4 +1,7 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+
+const A4_WIDTH = 794;
+const A4_HEIGHT = 1123;
 import { Canvas, PencilBrush, Line, Rect, Ellipse } from "fabric";
 import "./Whiteboard.css";
 
@@ -6,6 +9,7 @@ export default function Whiteboard({ tool, color }) {
   const containerRef = useRef(null);
   const canvasElRef = useRef(null);
   const fabricRef = useRef(null);
+  const [pageHeight, setPageHeight] = useState(A4_HEIGHT);
   // Live values read by the long-lived fabric event handlers.
   const toolRef = useRef(tool);
   const colorRef = useRef(color);
@@ -21,16 +25,8 @@ export default function Whiteboard({ tool, color }) {
     const brush = new PencilBrush(canvas);
     canvas.freeDrawingBrush = brush;
 
-    const resize = () => {
-      const container = containerRef.current;
-      canvas.setDimensions({
-        width: container.clientWidth,
-        height: container.clientHeight,
-      });
-      canvas.renderAll();
-    };
-    resize();
-    window.addEventListener("resize", resize);
+    canvas.setDimensions({ width: A4_WIDTH, height: A4_HEIGHT });
+    canvas.renderAll();
 
     let shape = null;
     let origin = null;
@@ -115,7 +111,6 @@ export default function Whiteboard({ tool, color }) {
     canvas.on("mouse:up", onMouseUp);
 
     return () => {
-      window.removeEventListener("resize", resize);
       canvas.dispose();
       fabricRef.current = null;
     };
@@ -135,9 +130,25 @@ export default function Whiteboard({ tool, color }) {
     }
   }, [tool, color]);
 
+  const extendCanvas = () => {
+    const canvas = fabricRef.current;
+    if (!canvas) return;
+    const newHeight = pageHeight + A4_HEIGHT;
+    canvas.setDimensions({ width: A4_WIDTH, height: newHeight });
+    canvas.renderAll();
+    setPageHeight(newHeight);
+  };
+
   return (
     <div className="whiteboard" ref={containerRef}>
-      <canvas ref={canvasElRef} />
+      <div className="whiteboard-stack">
+        <div className="whiteboard-page" style={{ height: pageHeight }}>
+          <canvas ref={canvasElRef} />
+        </div>
+        <button type="button" className="whiteboard-extend" onClick={extendCanvas}>
+          Extend canvas
+        </button>
+      </div>
     </div>
   );
 }

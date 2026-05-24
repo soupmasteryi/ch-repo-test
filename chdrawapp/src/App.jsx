@@ -21,6 +21,7 @@ export default function App() {
   const [tool, setTool] = useState("pencil");
   const [color, setColor] = useState(COLORS[0]);
   const [path, setPath] = useState(window.location.pathname);
+  const [clearSignal, setClearSignal] = useState(0);
 
   useEffect(() => {
     const onPop = () => setPath(window.location.pathname);
@@ -46,8 +47,9 @@ export default function App() {
           color={color}
           onColorChange={setColor}
           colors={COLORS}
+          onClearCanvas={() => setClearSignal((n) => n + 1)}
         />
-        <Whiteboard tool={tool} color={color} />
+        <Whiteboard tool={tool} color={color} clearSignal={clearSignal} />
       </div>
     </div>
   );

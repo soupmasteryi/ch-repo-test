@@ -1,3 +1,4 @@
+import { useState } from "react";
 import "./Sidebar.css";
 
 const TOOLS = [
@@ -13,7 +14,15 @@ export default function Sidebar({
   color,
   onColorChange,
   colors,
+  onClearCanvas,
 }) {
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  const handleConfirm = () => {
+    onClearCanvas?.();
+    setShowConfirm(false);
+  };
+
   return (
     <aside className="sidebar">
       <h1 className="sidebar-title">Whiteboard</h1>
@@ -51,6 +60,48 @@ export default function Sidebar({
           ))}
         </div>
       </section>
+
+      <div className="sidebar-footer">
+        <button
+          type="button"
+          className="clear-btn"
+          onClick={() => setShowConfirm(true)}
+        >
+          Clear canvas
+        </button>
+      </div>
+
+      {showConfirm && (
+        <div
+          className="modal-overlay"
+          onClick={() => setShowConfirm(false)}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h3 className="modal-title">Clear canvas?</h3>
+            <p className="modal-body">
+              This will erase everything on the canvas. This cannot be undone.
+            </p>
+            <div className="modal-actions">
+              <button
+                type="button"
+                className="modal-btn modal-btn-cancel"
+                onClick={() => setShowConfirm(false)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="modal-btn modal-btn-confirm"
+                onClick={handleConfirm}
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </aside>
   );
 }

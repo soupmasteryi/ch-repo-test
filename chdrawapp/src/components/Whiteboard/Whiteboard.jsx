@@ -5,7 +5,7 @@ const A4_HEIGHT = 1123;
 import { Canvas, PencilBrush, Line, Rect, Ellipse } from "fabric";
 import "./Whiteboard.css";
 
-export default function Whiteboard({ tool, color }) {
+export default function Whiteboard({ tool, color, clearSignal }) {
   const containerRef = useRef(null);
   const canvasElRef = useRef(null);
   const fabricRef = useRef(null);
@@ -129,6 +129,17 @@ export default function Whiteboard({ tool, color }) {
       canvas.freeDrawingBrush.width = 3;
     }
   }, [tool, color]);
+
+  useEffect(() => {
+    if (!clearSignal) return;
+    const canvas = fabricRef.current;
+    if (!canvas) return;
+    canvas.clear();
+    canvas.backgroundColor = "#ffffff";
+    canvas.setDimensions({ width: A4_WIDTH, height: A4_HEIGHT });
+    canvas.renderAll();
+    setPageHeight(A4_HEIGHT);
+  }, [clearSignal]);
 
   const extendCanvas = () => {
     const canvas = fabricRef.current;

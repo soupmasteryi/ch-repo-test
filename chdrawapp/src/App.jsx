@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./App.css";
 import Header from "./components/Header/Header";
 import Sidebar from "./components/Sidebar/Sidebar";
 import Whiteboard from "./components/Whiteboard/Whiteboard";
+import Login from "./components/Login/Login";
+import Register from "./components/Register/Register";
 
 const COLORS = [
   "#000000",
@@ -18,6 +20,21 @@ const COLORS = [
 export default function App() {
   const [tool, setTool] = useState("pencil");
   const [color, setColor] = useState(COLORS[0]);
+  const [path, setPath] = useState(window.location.pathname);
+
+  useEffect(() => {
+    const onPop = () => setPath(window.location.pathname);
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
+  if (path === "/login") {
+    return <Login />;
+  }
+
+  if (path === "/register") {
+    return <Register />;
+  }
 
   return (
     <div className="app">

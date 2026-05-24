@@ -1,0 +1,71 @@
+.register {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+  background: #f4f6fa;
+}
+
+.register-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 32px;
+  width: 320px;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.register-title {
+  margin: 0 0 8px;
+  font-size: 24px;
+  text-align: center;
+}
+
+.register-label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  color: #333;
+}
+
+.register-input {
+  padding: 8px 10px;
+  border: 1px solid #ccd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.register-button {
+  padding: 10px;
+  background: #1d7be3;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.register-button:hover {
+  background: #1668c4;
+}
+
+.register-footer {
+  margin: 8px 0 0;
+  text-align: center;
+  font-size: 13px;
+  color: #555;
+}
+
+.register-msg-ok {
+  font-size: 12px;
+  color: #2a9d8f;
+}
+
+.register-msg-err {
+  font-size: 12px;
+  color: #e63946;
+}

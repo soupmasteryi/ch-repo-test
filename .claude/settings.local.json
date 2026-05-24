@@ -4,7 +4,8 @@
       "Bash(cd /d D:\\\\work\\\\ch-repo-test)",
       "Bash(dir chdrawapp *)",
       "Bash(dir .vscode)",
-      "Bash(npm install *)"
+      "Bash(npm install *)",
+      "mcp__Claude_Preview__preview_start"
     ]
   }
 }

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import "./App.css";
+import Header from "./components/Header/Header";
 import Sidebar from "./components/Sidebar/Sidebar";
 import Whiteboard from "./components/Whiteboard/Whiteboard";
 
@@ -20,14 +21,17 @@ export default function App() {
 
   return (
     <div className="app">
-      <Sidebar
-        tool={tool}
-        onToolChange={setTool}
-        color={color}
-        onColorChange={setColor}
-        colors={COLORS}
-      />
-      <Whiteboard tool={tool} color={color} />
+      <Header />
+      <div className="app-body">
+        <Sidebar
+          tool={tool}
+          onToolChange={setTool}
+          color={color}
+          onColorChange={setColor}
+          colors={COLORS}
+        />
+        <Whiteboard tool={tool} color={color} />
+      </div>
     </div>
   );
 }

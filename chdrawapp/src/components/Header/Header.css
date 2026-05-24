@@ -1,0 +1,35 @@
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  background: #1e1e1e;
+  color: #e0e0e0;
+  border-bottom: 1px solid #3a3a3a;
+}
+
+.header-home {
+  color: #e0e0e0;
+  text-decoration: none;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 4px;
+}
+
+.header-home:hover {
+  background: #2a2a2a;
+}
+
+.header-login {
+  background: #1d7be3;
+  color: #fff;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.header-login:hover {
+  background: #1668c2;
+}

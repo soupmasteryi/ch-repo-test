@@ -15,6 +15,8 @@ export default function Sidebar({
   onColorChange,
   colors,
   onClearCanvas,
+  onUndo,
+  onRedo,
 }) {
   const [showConfirm, setShowConfirm] = useState(false);
 
@@ -42,6 +44,18 @@ export default function Sidebar({
               <span className="tool-label">{t.label}</span>
             </button>
           ))}
+        </div>
+      </section>
+
+      <section className="sidebar-section">
+        <h2 className="sidebar-heading">History</h2>
+        <div className="history-row">
+          <button type="button" className="history-btn" onClick={onUndo} title="Undo (Ctrl+Z)">
+            ↶ Undo
+          </button>
+          <button type="button" className="history-btn" onClick={onRedo} title="Redo (Ctrl+Y)">
+            ↷ Redo
+          </button>
         </div>
       </section>
 

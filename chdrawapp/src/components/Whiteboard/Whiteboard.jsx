@@ -5,7 +5,7 @@ const A4_HEIGHT = 1123;
 import { Canvas, PencilBrush, Line, Rect, Ellipse } from "fabric";
 import "./Whiteboard.css";
 
-export default function Whiteboard({ tool, color, clearSignal }) {
+export default function Whiteboard({ tool, color, clearSignal, historyApiRef }) {
   const containerRef = useRef(null);
   const canvasElRef = useRef(null);
   const fabricRef = useRef(null);
@@ -13,6 +13,9 @@ export default function Whiteboard({ tool, color, clearSignal }) {
   // Live values read by the long-lived fabric event handlers.
   const toolRef = useRef(tool);
   const colorRef = useRef(color);
+  const undoStackRef = useRef([]);
+  const redoStackRef = useRef([]);
+  const isRestoringRef = useRef(false);
 
   // Initialize the fabric canvas once.
   useEffect(() => {
@@ -27,6 +30,12 @@ export default function Whiteboard({ tool, color, clearSignal }) {
 
     canvas.setDimensions({ width: A4_WIDTH, height: A4_HEIGHT });
     canvas.renderAll();
+
+    const pushHistory = (op) => {
+      if (isRestoringRef.current) return;
+      undoStackRef.current.push(op);
+      redoStackRef.current = [];
+    };
 
     let shape = null;
     let origin = null;
@@ -102,19 +111,72 @@ export default function Whiteboard({ tool, color, clearSignal }) {
     };
 
     const onMouseUp = () => {
+      if (shape) {
+        pushHistory({ type: "add", object: shape });
+      }
       shape = null;
       origin = null;
+    };
+
+    const onPathCreated = (e) => {
+      // Pencil stroke: fabric commits the whole mousedown→mouseup path as one Path object.
+      pushHistory({ type: "add", object: e.path });
     };
 
     canvas.on("mouse:down", onMouseDown);
     canvas.on("mouse:move", onMouseMove);
     canvas.on("mouse:up", onMouseUp);
+    canvas.on("path:created", onPathCreated);
+
+    const undo = () => {
+      const op = undoStackRef.current.pop();
+      if (!op) return;
+      isRestoringRef.current = true;
+      if (op.type === "add") {
+        canvas.remove(op.object);
+        redoStackRef.current.push(op);
+      }
+      canvas.renderAll();
+      isRestoringRef.current = false;
+    };
+
+    const redo = () => {
+      const op = redoStackRef.current.pop();
+      if (!op) return;
+      isRestoringRef.current = true;
+      if (op.type === "add") {
+        canvas.add(op.object);
+        undoStackRef.current.push(op);
+      }
+      canvas.renderAll();
+      isRestoringRef.current = false;
+    };
+
+    if (historyApiRef) {
+      historyApiRef.current = { undo, redo };
+    }
+
+    const onKeyDown = (e) => {
+      const mod = e.ctrlKey || e.metaKey;
+      if (!mod) return;
+      const key = e.key.toLowerCase();
+      if (key === "z" && !e.shiftKey) {
+        e.preventDefault();
+        undo();
+      } else if ((key === "z" && e.shiftKey) || key === "y") {
+        e.preventDefault();
+        redo();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
 
     return () => {
+      window.removeEventListener("keydown", onKeyDown);
       canvas.dispose();
       fabricRef.current = null;
+      if (historyApiRef) historyApiRef.current = null;
     };
-  }, []);
+  }, [historyApiRef]);
 
   // Apply tool / color changes to the canvas.
   useEffect(() => {
@@ -138,6 +200,8 @@ export default function Whiteboard({ tool, color, clearSignal }) {
     canvas.backgroundColor = "#ffffff";
     canvas.setDimensions({ width: A4_WIDTH, height: A4_HEIGHT });
     canvas.renderAll();
+    undoStackRef.current = [];
+    redoStackRef.current = [];
     setPageHeight(A4_HEIGHT);
   }, [clearSignal]);
 

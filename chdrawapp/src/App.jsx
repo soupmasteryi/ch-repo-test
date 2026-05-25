@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import "./App.css";
 import Header from "./components/Header/Header";
 import Sidebar from "./components/Sidebar/Sidebar";
@@ -22,6 +22,7 @@ export default function App() {
   const [color, setColor] = useState(COLORS[0]);
   const [path, setPath] = useState(window.location.pathname);
   const [clearSignal, setClearSignal] = useState(0);
+  const historyApiRef = useRef(null);
 
   useEffect(() => {
     const onPop = () => setPath(window.location.pathname);
@@ -48,8 +49,15 @@ export default function App() {
           onColorChange={setColor}
           colors={COLORS}
           onClearCanvas={() => setClearSignal((n) => n + 1)}
+          onUndo={() => historyApiRef.current?.undo()}
+          onRedo={() => historyApiRef.current?.redo()}
         />
-        <Whiteboard tool={tool} color={color} clearSignal={clearSignal} />
+        <Whiteboard
+          tool={tool}
+          color={color}
+          clearSignal={clearSignal}
+          historyApiRef={historyApiRef}
+        />
       </div>
     </div>
   );

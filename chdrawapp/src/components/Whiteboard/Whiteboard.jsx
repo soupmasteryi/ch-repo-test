@@ -1,23 +1,30 @@
 import { useEffect, useRef, useState } from "react";
+import { Canvas, Line, Rect, Ellipse } from "fabric";
+
+import "./Whiteboard.css";
+import { CancellablePencilBrush } from "./CancellablePencilBrush";
 
 const A4_WIDTH = 794;
 const A4_HEIGHT = 1123;
-import { Canvas, PencilBrush, Line, Rect, Ellipse } from "fabric";
-import "./Whiteboard.css";
 
-export default function Whiteboard({ tool, color, clearSignal, historyApiRef }) {
+export default function Whiteboard({
+  tool,
+  color,
+  clearSignal,
+  historyApiRef,
+}) {
   const containerRef = useRef(null);
   const canvasElRef = useRef(null);
   const fabricRef = useRef(null);
   const [pageHeight, setPageHeight] = useState(A4_HEIGHT);
-  // Live values read by the long-lived fabric event handlers.
+
   const toolRef = useRef(tool);
   const colorRef = useRef(color);
   const undoStackRef = useRef([]);
   const redoStackRef = useRef([]);
+  const isMouseDown = useRef(false);
   const isRestoringRef = useRef(false);
 
-  // Initialize the fabric canvas once.
   useEffect(() => {
     const canvas = new Canvas(canvasElRef.current, {
       backgroundColor: "#ffffff",
@@ -25,7 +32,7 @@ export default function Whiteboard({ tool, color, clearSignal, historyApiRef }) 
     });
     fabricRef.current = canvas;
 
-    const brush = new PencilBrush(canvas);
+    const brush = new CancellablePencilBrush(canvas);
     canvas.freeDrawingBrush = brush;
 
     canvas.setDimensions({ width: A4_WIDTH, height: A4_HEIGHT });
@@ -41,6 +48,8 @@ export default function Whiteboard({ tool, color, clearSignal, historyApiRef }) 
     let origin = null;
 
     const onMouseDown = (opt) => {
+      if (isMouseDown.current) return;
+      isMouseDown.current = true;
       const t = toolRef.current;
       if (t === "pencil") return;
 
@@ -111,6 +120,8 @@ export default function Whiteboard({ tool, color, clearSignal, historyApiRef }) 
     };
 
     const onMouseUp = () => {
+      if (!isMouseDown.current) return;
+      isMouseDown.current = false;
       if (shape) {
         pushHistory({ type: "add", object: shape });
       }
@@ -157,14 +168,28 @@ export default function Whiteboard({ tool, color, clearSignal, historyApiRef }) 
     }
 
     const onKeyDown = (e) => {
-      const mod = e.ctrlKey || e.metaKey;
-      if (!mod) return;
       const key = e.key.toLowerCase();
-      if (key === "z" && !e.shiftKey) {
-        e.preventDefault();
+      const isUndo = key === "z" && !e.shiftKey;
+      const isRedo = (key === "z" && e.shiftKey) || key === "y";
+
+      if (!(isUndo || isRedo)) return;
+
+      e.preventDefault();
+
+      if (isMouseDown.current) {
+        if (canvas.isDrawingMode) {
+          canvas.freeDrawingBrush.onMouseUp({
+            e: new PointerEvent("pointerup", { isPrimary: true }),
+          });
+        } else {
+          canvas.fire("mouse:up");
+        }
+        isMouseDown.current = false;
+      }
+
+      if (isUndo) {
         undo();
-      } else if ((key === "z" && e.shiftKey) || key === "y") {
-        e.preventDefault();
+      } else if (isRedo) {
         redo();
       }
     };
@@ -220,7 +245,11 @@ export default function Whiteboard({ tool, color, clearSignal, historyApiRef }) 
         <div className="whiteboard-page" style={{ height: pageHeight }}>
           <canvas ref={canvasElRef} />
         </div>
-        <button type="button" className="whiteboard-extend" onClick={extendCanvas}>
+        <button
+          type="button"
+          className="whiteboard-extend"
+          onClick={extendCanvas}
+        >
           Extend canvas
         </button>
       </div>

@@ -18,11 +18,11 @@ export default function Sidebar({
   onUndo,
   onRedo,
 }) {
-  const [showConfirm, setShowConfirm] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const handleConfirm = () => {
     onClearCanvas?.();
-    setShowConfirm(false);
+    setShowDeleteModal(false);
   };
 
   return (
@@ -79,16 +79,16 @@ export default function Sidebar({
         <button
           type="button"
           className="clear-btn"
-          onClick={() => setShowConfirm(true)}
+          onClick={() => setShowDeleteModal(true)}
         >
           Clear canvas
         </button>
       </div>
 
-      {showConfirm && (
+      {showDeleteModal && (
         <div
           className="modal-overlay"
-          onClick={() => setShowConfirm(false)}
+          onClick={() => setShowDeleteModal(false)}
           role="dialog"
           aria-modal="true"
         >
@@ -101,7 +101,7 @@ export default function Sidebar({
               <button
                 type="button"
                 className="modal-btn modal-btn-cancel"
-                onClick={() => setShowConfirm(false)}
+                onClick={() => setShowDeleteModal(false)}
               >
                 Cancel
               </button>

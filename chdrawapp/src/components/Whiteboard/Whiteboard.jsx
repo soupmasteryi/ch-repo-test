@@ -131,6 +131,7 @@ export default function Whiteboard({
 
     const onPathCreated = (e) => {
       // Pencil stroke: fabric commits the whole mousedown→mouseup path as one Path object.
+      e.path.set({ selectable: false, evented: false });
       pushHistory({ type: "add", object: e.path });
     };
 

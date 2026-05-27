@@ -20,6 +20,16 @@ const COLORS = [
 export default function App() {
   const [tool, setTool] = useState("pencil");
   const [color, setColor] = useState(COLORS[0]);
+  const [thicknessByTool, setThicknessByTool] = useState({
+    pencil: 3,
+    line: 3,
+    arrow: 3,
+    rectangle: 3,
+    circle: 3,
+  });
+  const thickness = thicknessByTool[tool] ?? 3;
+  const setThickness = (n) =>
+    setThicknessByTool((m) => ({ ...m, [tool]: n }));
   const [path, setPath] = useState(window.location.pathname);
   const [clearSignal, setClearSignal] = useState(0);
   const historyApiRef = useRef(null);
@@ -48,6 +58,8 @@ export default function App() {
           color={color}
           onColorChange={setColor}
           colors={COLORS}
+          thickness={thickness}
+          onThicknessChange={setThickness}
           onClearCanvas={() => setClearSignal((n) => n + 1)}
           onUndo={() => historyApiRef.current?.undo()}
           onRedo={() => historyApiRef.current?.redo()}
@@ -55,6 +67,7 @@ export default function App() {
         <Whiteboard
           tool={tool}
           color={color}
+          thickness={thickness}
           clearSignal={clearSignal}
           historyApiRef={historyApiRef}
         />

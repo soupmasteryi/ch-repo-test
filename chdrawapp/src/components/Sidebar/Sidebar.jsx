@@ -4,6 +4,7 @@ import "./Sidebar.css";
 const TOOLS = [
   { id: "pencil", label: "Pencil", icon: "✏️" },
   { id: "line", label: "Line", icon: "╱" },
+  { id: "arrow", label: "Arrow", icon: "➤" },
   { id: "rectangle", label: "Rectangle", icon: "▭" },
   { id: "circle", label: "Circle", icon: "◯" },
 ];
@@ -14,6 +15,8 @@ export default function Sidebar({
   color,
   onColorChange,
   colors,
+  thickness,
+  onThicknessChange,
   onClearCanvas,
   onUndo,
   onRedo,
@@ -56,6 +59,22 @@ export default function Sidebar({
           <button type="button" className="history-btn" onClick={onRedo} title="Redo (Ctrl+Y)">
             ↷ Redo
           </button>
+        </div>
+      </section>
+
+      <section className="sidebar-section">
+        <h2 className="sidebar-heading">Thickness</h2>
+        <div className="thickness-row">
+          <input
+            type="range"
+            min={1}
+            max={20}
+            step={1}
+            value={thickness}
+            onChange={(e) => onThicknessChange(Number(e.target.value))}
+            className="thickness-slider"
+          />
+          <span className="thickness-value">{thickness}px</span>
         </div>
       </section>
 

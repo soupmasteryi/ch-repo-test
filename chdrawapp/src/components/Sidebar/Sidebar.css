@@ -85,6 +85,25 @@
   box-shadow: 0 0 0 2px #1d7be3;
 }
 
+.thickness-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.thickness-slider {
+  flex: 1;
+  accent-color: #1d7be3;
+  cursor: pointer;
+}
+
+.thickness-value {
+  font-size: 12px;
+  color: #bdbdbd;
+  min-width: 34px;
+  text-align: right;
+}
+
 .history-row {
   display: flex;
   gap: 6px;

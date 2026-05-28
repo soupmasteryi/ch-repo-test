@@ -11,6 +11,10 @@ export default class StraightArrowBrush extends PencilBrush {
     return Math.PI / 7;
   }
 
+  _getMaxErr() {
+    return 0.25;
+  }
+
   onMouseDown(pointer, ev) {
     super.onMouseDown(pointer, ev);
     this._startPoint = { x: pointer.x, y: pointer.y };
@@ -23,6 +27,8 @@ export default class StraightArrowBrush extends PencilBrush {
         ? this._points[this._points.length - 1]
         : start;
 
+    const tracedPoints = this._points ? this._points.slice() : [];
+
     this._points = [];
     this.drawStraightLine = false;
     this.oldEnd = undefined;
@@ -30,13 +36,28 @@ export default class StraightArrowBrush extends PencilBrush {
 
     this.canvas.clearContext(this.canvas.contextTop);
 
-    if (
-      !start ||
-      !end ||
-      Math.hypot(start.x - end.x, start.y - end.y) < this._getHeadLen()
-    ) {
+    const lineLength =
+      start && end ? Math.hypot(start.x - end.x, start.y - end.y) : 0;
+
+    if (lineLength < this._getHeadLen()) {
       this.canvas.renderAll();
       return false;
+    }
+
+    if (tracedPoints.length > 1) {
+      const dx = end.x - start.x;
+      const dy = end.y - start.y;
+      let total = 0;
+      for (const p of tracedPoints) {
+        total += Math.abs(
+          dy * p.x - dx * p.y + end.x * start.y - end.y * start.x,
+        );
+      }
+      const avgDistance = total / (tracedPoints.length * lineLength);
+      if (avgDistance > lineLength * this._getMaxErr()) {
+        this.canvas.renderAll();
+        return false;
+      }
     }
 
     const arrow = this._buildArrow(start, end);
@@ -68,8 +89,8 @@ export default class StraightArrowBrush extends PencilBrush {
       strokeWidth: 1,
     });
 
-    const headBase = Math.hypot(arrLeft.x - arrRight.x, arrLeft.y - arrRight.y)
-    const headHeight = Math.sqrt(headLen * headLen - headBase * headBase / 4)
+    const headBase = Math.hypot(arrLeft.x - arrRight.x, arrLeft.y - arrRight.y);
+    const headHeight = Math.sqrt(headLen * headLen - (headBase * headBase) / 4);
 
     const lineEnd = {
       x: end.x - headHeight * Math.cos(angle),
@@ -81,7 +102,6 @@ export default class StraightArrowBrush extends PencilBrush {
       strokeWidth: this.width,
       strokeLineCap: "round",
     });
-
 
     return new Group([line, head], {
       selectable: false,

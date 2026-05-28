@@ -1,7 +1,15 @@
-import { Group, Line, PencilBrush, Polygon } from "fabric";
+import { Group, Line, PencilBrush, Polygon, Rect } from "fabric";
 
 export default class StraightArrowBrush extends PencilBrush {
   _startPoint = null;
+
+  _getHeadLen() {
+    return this.width * 5;
+  }
+
+  _getHeadAngle() {
+    return Math.PI / 7;
+  }
 
   onMouseDown(pointer, ev) {
     super.onMouseDown(pointer, ev);
@@ -22,8 +30,11 @@ export default class StraightArrowBrush extends PencilBrush {
 
     this.canvas.clearContext(this.canvas.contextTop);
 
-    if (!start || !end) return false;
-    if (start.x === end.x && start.y === end.y) {
+    if (
+      !start ||
+      !end ||
+      Math.hypot(start.x - end.x, start.y - end.y) < this._getHeadLen()
+    ) {
       this.canvas.renderAll();
       return false;
     }
@@ -37,33 +48,40 @@ export default class StraightArrowBrush extends PencilBrush {
   }
 
   _buildArrow(start, end) {
-    const color = this.color;
-    const width = this.width;
-    const headLen = Math.max(width * 4, 12);
-    const headAngle = Math.PI / 7;
+    const headLen = this._getHeadLen();
+    const headAngle = this._getHeadAngle();
     const angle = Math.atan2(end.y - start.y, end.x - start.x);
 
-    const line = new Line([start.x, start.y, end.x, end.y], {
-      stroke: color,
-      strokeWidth: width,
-      strokeLineCap: "round",
-    });
-
     const tip = { x: end.x, y: end.y };
-    const left = {
+    const arrLeft = {
       x: end.x - headLen * Math.cos(angle - headAngle),
       y: end.y - headLen * Math.sin(angle - headAngle),
     };
-    const right = {
+    const arrRight = {
       x: end.x - headLen * Math.cos(angle + headAngle),
       y: end.y - headLen * Math.sin(angle + headAngle),
     };
 
-    const head = new Polygon([tip, left, right], {
-      fill: color,
-      stroke: color,
+    const head = new Polygon([tip, arrLeft, arrRight], {
+      fill: this.color,
+      stroke: this.color,
       strokeWidth: 1,
     });
+
+    const headBase = Math.hypot(arrLeft.x - arrRight.x, arrLeft.y - arrRight.y)
+    const headHeight = Math.sqrt(headLen * headLen - headBase * headBase / 4)
+
+    const lineEnd = {
+      x: end.x - headHeight * Math.cos(angle),
+      y: end.y - headHeight * Math.sin(angle),
+    };
+
+    const line = new Line([start.x, start.y, lineEnd.x, lineEnd.y], {
+      stroke: this.color,
+      strokeWidth: this.width,
+      strokeLineCap: "round",
+    });
+
 
     return new Group([line, head], {
       selectable: false,

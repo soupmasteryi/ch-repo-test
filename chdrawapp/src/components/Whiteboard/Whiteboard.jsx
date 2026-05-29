@@ -4,6 +4,7 @@ import { Canvas, Line, Rect, Ellipse, PencilBrush } from "fabric";
 import "./Whiteboard.css";
 import MakeMouseSafeBrush from "./MakeMouseSafeBrush";
 import StraightArrowBrush from "./StraightArrowBrush";
+import CurvedArrowBrush from "./CurvedArrowBrush";
 
 const A4_WIDTH = 794;
 const A4_HEIGHT = 1123;
@@ -37,8 +38,13 @@ export default function Whiteboard({
 
     const pencilBrush = MakeMouseSafeBrush(new PencilBrush(canvas));
     const arrowBrush = MakeMouseSafeBrush(new StraightArrowBrush(canvas));
+    const curvedArrowBrush = MakeMouseSafeBrush(new CurvedArrowBrush(canvas));
     canvas.freeDrawingBrush = pencilBrush;
-    canvas._brushes = { pencil: pencilBrush, arrow: arrowBrush };
+    canvas._brushes = {
+      pencil: pencilBrush,
+      arrow: arrowBrush,
+      curvedArrow: curvedArrowBrush,
+    };
 
     canvas.setDimensions({ width: A4_WIDTH, height: A4_HEIGHT });
     canvas.renderAll();
@@ -56,7 +62,7 @@ export default function Whiteboard({
       if (isMouseDown.current) return;
       isMouseDown.current = true;
       const t = toolRef.current;
-      if (t === "pencil" || t === "arrow") return;
+      if (t === "pencil" || t === "arrow" || t === "curvedArrow") return;
 
       const p = canvas.getScenePoint(opt.e);
       origin = { x: p.x, y: p.y };
@@ -217,10 +223,15 @@ export default function Whiteboard({
     const canvas = fabricRef.current;
     if (!canvas) return;
 
-    canvas.isDrawingMode = tool === "pencil" || tool === "arrow";
+    canvas.isDrawingMode =
+      tool === "pencil" || tool === "arrow" || tool === "curvedArrow";
     if (canvas._brushes) {
       const next =
-        tool === "arrow" ? canvas._brushes.arrow : canvas._brushes.pencil;
+        tool === "arrow"
+          ? canvas._brushes.arrow
+          : tool === "curvedArrow"
+            ? canvas._brushes.curvedArrow
+            : canvas._brushes.pencil;
       canvas.freeDrawingBrush = next;
     }
     if (canvas.freeDrawingBrush) {

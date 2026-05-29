@@ -4,7 +4,7 @@ export default class StraightArrowBrush extends PencilBrush {
   _startPoint = null;
 
   _getHeadLen() {
-    return this.width * 5;
+    return 4 + this.width * 3;
   }
 
   _getHeadAngle() {
@@ -27,7 +27,7 @@ export default class StraightArrowBrush extends PencilBrush {
         ? this._points[this._points.length - 1]
         : start;
 
-    const tracedPoints = this._points ? this._points.slice() : [];
+    const points = this._points;
 
     this._points = [];
     this.drawStraightLine = false;
@@ -44,20 +44,11 @@ export default class StraightArrowBrush extends PencilBrush {
       return false;
     }
 
-    if (tracedPoints.length > 1) {
-      const dx = end.x - start.x;
-      const dy = end.y - start.y;
-      let total = 0;
-      for (const p of tracedPoints) {
-        total += Math.abs(
-          dy * p.x - dx * p.y + end.x * start.y - end.y * start.x,
-        );
-      }
-      const avgDistance = total / (tracedPoints.length * lineLength);
-      if (avgDistance > lineLength * this._getMaxErr()) {
-        this.canvas.renderAll();
-        return false;
-      }
+    if (
+      !this._isLineStraight(start, end, points, lineLength, this._getMaxErr())
+    ) {
+      this.canvas.renderAll();
+      return false;
     }
 
     const arrow = this._buildArrow(start, end);
@@ -66,6 +57,19 @@ export default class StraightArrowBrush extends PencilBrush {
     this.canvas.fire("path:created", { path: arrow });
     this.canvas.renderAll();
     return false;
+  }
+
+  _isLineStraight(start, end, points, lineLength, err) {
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+    let total = 0;
+    for (const p of points) {
+      total += Math.abs(
+        dy * p.x - dx * p.y + end.x * start.y - end.y * start.x,
+      );
+    }
+    const avgDistance = total / (points.length * lineLength);
+    return avgDistance < lineLength * this._getMaxErr();
   }
 
   _buildArrow(start, end) {

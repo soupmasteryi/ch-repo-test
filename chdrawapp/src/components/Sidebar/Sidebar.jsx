@@ -5,6 +5,7 @@ const TOOLS = [
   { id: "pencil", label: "Pencil", icon: "✏️" },
   { id: "line", label: "Line", icon: "╱" },
   { id: "arrow", label: "Arrow", icon: "➤" },
+  { id: "curvedArrow", label: "Curved Arrow", icon: "↝" },
   { id: "rectangle", label: "Rectangle", icon: "▭" },
   { id: "circle", label: "Circle", icon: "◯" },
 ];
@@ -68,8 +69,8 @@ export default function Sidebar({
           <input
             type="range"
             min={1}
-            max={20}
-            step={1}
+            max={5}
+            step={0.25}
             value={thickness}
             onChange={(e) => onThicknessChange(Number(e.target.value))}
             className="thickness-slider"

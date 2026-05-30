@@ -5,6 +5,7 @@ import "./Whiteboard.css";
 import MakeMouseSafeBrush from "./MakeMouseSafeBrush";
 import StraightArrowBrush from "./StraightArrowBrush";
 import CurvedArrowBrush from "./CurvedArrowBrush";
+import CircleBrush from "./CircleBrush";
 
 const A4_WIDTH = 794;
 const A4_HEIGHT = 1123;
@@ -39,11 +40,13 @@ export default function Whiteboard({
     const pencilBrush = MakeMouseSafeBrush(new PencilBrush(canvas));
     const arrowBrush = MakeMouseSafeBrush(new StraightArrowBrush(canvas));
     const curvedArrowBrush = MakeMouseSafeBrush(new CurvedArrowBrush(canvas));
+    const circleBrush = MakeMouseSafeBrush(new CircleBrush(canvas));
     canvas.freeDrawingBrush = pencilBrush;
     canvas._brushes = {
       pencil: pencilBrush,
       arrow: arrowBrush,
       curvedArrow: curvedArrowBrush,
+      circleBrush: circleBrush,
     };
 
     canvas.setDimensions({ width: A4_WIDTH, height: A4_HEIGHT });
@@ -62,7 +65,7 @@ export default function Whiteboard({
       if (isMouseDown.current) return;
       isMouseDown.current = true;
       const t = toolRef.current;
-      if (t === "pencil" || t === "arrow" || t === "curvedArrow") return;
+      if (t === "pencil" || t === "arrow" || t === "curvedArrow" || t === "circleBrush") return;
 
       const p = canvas.getScenePoint(opt.e);
       origin = { x: p.x, y: p.y };
@@ -224,14 +227,16 @@ export default function Whiteboard({
     if (!canvas) return;
 
     canvas.isDrawingMode =
-      tool === "pencil" || tool === "arrow" || tool === "curvedArrow";
+      tool === "pencil" || tool === "arrow" || tool === "curvedArrow" || tool === "circleBrush";
     if (canvas._brushes) {
       const next =
         tool === "arrow"
           ? canvas._brushes.arrow
           : tool === "curvedArrow"
             ? canvas._brushes.curvedArrow
-            : canvas._brushes.pencil;
+            : tool === "circleBrush"
+              ? canvas._brushes.circleBrush
+              : canvas._brushes.pencil;
       canvas.freeDrawingBrush = next;
     }
     if (canvas.freeDrawingBrush) {

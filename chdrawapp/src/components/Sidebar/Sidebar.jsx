@@ -8,6 +8,7 @@ const TOOLS = [
   { id: "curvedArrow", label: "Curved Arrow", icon: "↝" },
   { id: "rectangle", label: "Rectangle", icon: "▭" },
   { id: "circle", label: "Circle", icon: "◯" },
+  { id: "circleBrush", label: "Circle Brush", icon: "⊙" },
 ];
 
 export default function Sidebar({

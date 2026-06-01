@@ -9,6 +9,7 @@ const TOOLS = [
   { id: "rectangle", label: "Rectangle", icon: "▭" },
   { id: "circle", label: "Circle", icon: "◯" },
   { id: "circleBrush", label: "Circle Brush", icon: "⊙" },
+  { id: "pencil2", label: "Pencil 2", icon: "✎" },
 ];
 
 export default function Sidebar({
@@ -55,10 +56,20 @@ export default function Sidebar({
       <section className="sidebar-section">
         <h2 className="sidebar-heading">History</h2>
         <div className="history-row">
-          <button type="button" className="history-btn" onClick={onUndo} title="Undo (Ctrl+Z)">
+          <button
+            type="button"
+            className="history-btn"
+            onClick={onUndo}
+            title="Undo (Ctrl+Z)"
+          >
             ↶ Undo
           </button>
-          <button type="button" className="history-btn" onClick={onRedo} title="Redo (Ctrl+Y)">
+          <button
+            type="button"
+            className="history-btn"
+            onClick={onRedo}
+            title="Redo (Ctrl+Y)"
+          >
             ↷ Redo
           </button>
         </div>

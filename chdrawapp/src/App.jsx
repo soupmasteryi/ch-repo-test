@@ -28,8 +28,7 @@ export default function App() {
     circle: 3,
   });
   const thickness = thicknessByTool[tool] ?? 3;
-  const setThickness = (n) =>
-    setThicknessByTool((m) => ({ ...m, [tool]: n }));
+  const setThickness = (n) => setThicknessByTool((m) => ({ ...m, [tool]: n }));
   const [path, setPath] = useState(window.location.pathname);
   const [clearSignal, setClearSignal] = useState(0);
   const historyApiRef = useRef(null);

@@ -1,11 +1,20 @@
 import { useEffect, useRef, useState } from "react";
-import { Canvas, Line, Rect, Ellipse, PencilBrush } from "fabric";
+import {
+  Canvas,
+  Line,
+  Rect,
+  Ellipse,
+  PencilBrush,
+  Circle,
+  Color,
+} from "fabric";
 
 import "./Whiteboard.css";
 import MakeMouseSafeBrush from "./MakeMouseSafeBrush";
 import StraightArrowBrush from "./StraightArrowBrush";
 import CurvedArrowBrush from "./CurvedArrowBrush";
 import CircleBrush from "./CircleBrush";
+import PencilBrush2 from "./PencilBrush2";
 
 const A4_WIDTH = 794;
 const A4_HEIGHT = 1123;
@@ -35,18 +44,25 @@ export default function Whiteboard({
       backgroundColor: "#ffffff",
       selection: false,
     });
+
+    canvas.moleculeStuff = {
+      moleculeNodes: [],
+      moleculeGraph: [],
+    };
     fabricRef.current = canvas;
 
     const pencilBrush = MakeMouseSafeBrush(new PencilBrush(canvas));
     const arrowBrush = MakeMouseSafeBrush(new StraightArrowBrush(canvas));
     const curvedArrowBrush = MakeMouseSafeBrush(new CurvedArrowBrush(canvas));
     const circleBrush = MakeMouseSafeBrush(new CircleBrush(canvas));
+    const pencil2Brush = MakeMouseSafeBrush(new PencilBrush2(canvas));
     canvas.freeDrawingBrush = pencilBrush;
     canvas._brushes = {
       pencil: pencilBrush,
       arrow: arrowBrush,
       curvedArrow: curvedArrowBrush,
       circleBrush: circleBrush,
+      pencil2: pencil2Brush,
     };
 
     canvas.setDimensions({ width: A4_WIDTH, height: A4_HEIGHT });
@@ -65,7 +81,14 @@ export default function Whiteboard({
       if (isMouseDown.current) return;
       isMouseDown.current = true;
       const t = toolRef.current;
-      if (t === "pencil" || t === "arrow" || t === "curvedArrow" || t === "circleBrush") return;
+      if (
+        t === "pencil" ||
+        t === "arrow" ||
+        t === "curvedArrow" ||
+        t === "circleBrush" ||
+        t === "pencil2"
+      )
+        return;
 
       const p = canvas.getScenePoint(opt.e);
       origin = { x: p.x, y: p.y };
@@ -137,29 +160,36 @@ export default function Whiteboard({
       if (!isMouseDown.current) return;
       isMouseDown.current = false;
       if (shape) {
-        pushHistory({ type: "add", object: shape });
+        pushHistory({ type: "addBasic", object: shape });
       }
       shape = null;
       origin = null;
     };
 
     const onPathCreated = (e) => {
-      // Pencil stroke: fabric commits the whole mousedown→mouseup path as one Path object.
       e.path.set({ selectable: false, evented: false });
-      pushHistory({ type: "add", object: e.path });
+      pushHistory({ type: "addBasic", object: e.path });
+    };
+
+    const onMoleculeEdgeSetAdd = (e) => {
+      pushHistory({ type: "addMoleculeEdgeSet", object: e.edgeLines });
     };
 
     canvas.on("mouse:down", onMouseDown);
     canvas.on("mouse:move", onMouseMove);
     canvas.on("mouse:up", onMouseUp);
     canvas.on("path:created", onPathCreated);
+    canvas.on("custom:moleculeEdgeSetAdd", onMoleculeEdgeSetAdd);
 
     const undo = () => {
       const op = undoStackRef.current.pop();
       if (!op) return;
       isRestoringRef.current = true;
-      if (op.type === "add") {
+      if (op.type === "addBasic") {
         canvas.remove(op.object);
+        redoStackRef.current.push(op);
+      } else if (op.type === "addMoleculeEdgeSet") {
+        canvas.remove(...op.object);
         redoStackRef.current.push(op);
       }
       canvas.renderAll();
@@ -170,8 +200,11 @@ export default function Whiteboard({
       const op = redoStackRef.current.pop();
       if (!op) return;
       isRestoringRef.current = true;
-      if (op.type === "add") {
+      if (op.type === "addBasic") {
         canvas.add(op.object);
+        undoStackRef.current.push(op);
+      } else if (op.type === "addMoleculeEdgeSet") {
+        canvas.add(...op.object);
         undoStackRef.current.push(op);
       }
       canvas.renderAll();
@@ -227,7 +260,11 @@ export default function Whiteboard({
     if (!canvas) return;
 
     canvas.isDrawingMode =
-      tool === "pencil" || tool === "arrow" || tool === "curvedArrow" || tool === "circleBrush";
+      tool === "pencil" ||
+      tool === "arrow" ||
+      tool === "curvedArrow" ||
+      tool === "circleBrush" ||
+      tool === "pencil2";
     if (canvas._brushes) {
       const next =
         tool === "arrow"
@@ -236,11 +273,18 @@ export default function Whiteboard({
             ? canvas._brushes.curvedArrow
             : tool === "circleBrush"
               ? canvas._brushes.circleBrush
-              : canvas._brushes.pencil;
+              : tool === "pencil2"
+                ? canvas._brushes.pencil2
+                : canvas._brushes.pencil;
       canvas.freeDrawingBrush = next;
     }
     if (canvas.freeDrawingBrush) {
-      canvas.freeDrawingBrush.color = color;
+      canvas.freeDrawingBrush.color = colorRef.current;
+      if (canvas.freeDrawingBrush instanceof PencilBrush2) {
+        canvas.freeDrawingBrush.color = new Color(canvas.freeDrawingBrush.color)
+          .setAlpha(0.4)
+          .toRgba();
+      }
       canvas.freeDrawingBrush.width = thickness;
     }
   }, [tool, color, thickness]);

@@ -1,25 +1,23 @@
 export default function MakeMouseSafeBrush(innerBrush) {
   innerBrush._isMouseDown = false;
 
-  innerBrush.onMouseDown = function (pointer, { e }) {
+  innerBrush.onMouseDown = function (...args) {
     if (!this._isMouseDown) {
       this._isMouseDown = true;
-      Object.getPrototypeOf(innerBrush).onMouseDown.call(this, pointer, {
-        e,
-      });
+      Object.getPrototypeOf(innerBrush).onMouseDown.call(this, ...args);
     }
   };
 
-  innerBrush.onMouseMove = function (pointer, { e }) {
+  innerBrush.onMouseMove = function (...args) {
     if (this._isMouseDown) {
-      Object.getPrototypeOf(innerBrush).onMouseMove.call(this, pointer, { e });
+      Object.getPrototypeOf(innerBrush).onMouseMove.call(this, ...args);
     }
   };
 
-  innerBrush.onMouseUp = function ({ e }) {
+  innerBrush.onMouseUp = function (...args) {
     if (this._isMouseDown) {
       this._isMouseDown = false;
-      return Object.getPrototypeOf(innerBrush).onMouseUp.call(this, { e });
+      return Object.getPrototypeOf(innerBrush).onMouseUp.call(this, ...args);
     }
     return false;
   };

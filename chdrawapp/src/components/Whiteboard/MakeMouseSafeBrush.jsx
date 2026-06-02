@@ -1,4 +1,4 @@
-export default function MakeMouseSafeBrush(innerBrush) {
+export default function makeMouseSafeBrush(innerBrush) {
   innerBrush._isMouseDown = false;
 
   innerBrush.onMouseDown = function (...args) {

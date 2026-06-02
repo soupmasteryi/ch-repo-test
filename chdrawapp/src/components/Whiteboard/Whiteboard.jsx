@@ -8,9 +8,10 @@ import {
   Circle,
   Color,
 } from "fabric";
+import { UndirectedGraph } from "graphology";
 
 import "./Whiteboard.css";
-import MakeMouseSafeBrush from "./MakeMouseSafeBrush";
+import makeMouseSafeBrush from "./makeMouseSafeBrush";
 import StraightArrowBrush from "./StraightArrowBrush";
 import CurvedArrowBrush from "./CurvedArrowBrush";
 import CircleBrush from "./CircleBrush";
@@ -46,16 +47,50 @@ export default function Whiteboard({
     });
 
     canvas.moleculeStuff = {
-      moleculeNodes: [],
-      moleculeGraph: [],
+      getNodeFill() {
+        const color = new Color(canvas.backgroundColor);
+        color.getSource()[0] = 255 - color.getSource()[0];
+        color.getSource()[1] = 255 - color.getSource()[1];
+        color.getSource()[2] = 255 - color.getSource()[2];
+        return color.setAlpha(0.2).toRgba();
+      },
+      /*graphNodeId: 0,
+      graphLabels: [],
+      getNewLabel() {
+        return this.graphNodeId++;
+      },
+      createNode(node) {
+        const entry = {
+          node,
+          label: this.getNewLabel(),
+        };
+        this.graphLabels.push(entry);
+        return entry;
+      },
+      getNode(node) {
+        return this.graphLabels.find((ent) => ent.node === node);
+      },
+      deleteNode(node) {
+        const n = this.graphLabels.findIndex((ent) => ent.node === node);
+        if (0 <= n && n < this.graphLabels.length)
+          this.graphLabels.splice(n, 1);
+      }*/
+      getClosestNode(point, distanceMargin) {
+        return this.graph.findNode((node, attr) => {
+          const dx = attr.point.x - point.x;
+          const dy = attr.point.y - point.y;
+          return Math.hypot(dx, dy) <= distanceMargin + 0.01;
+        });
+      },
+      graph: new UndirectedGraph(),
     };
     fabricRef.current = canvas;
 
-    const pencilBrush = MakeMouseSafeBrush(new PencilBrush(canvas));
-    const arrowBrush = MakeMouseSafeBrush(new StraightArrowBrush(canvas));
-    const curvedArrowBrush = MakeMouseSafeBrush(new CurvedArrowBrush(canvas));
-    const circleBrush = MakeMouseSafeBrush(new CircleBrush(canvas));
-    const pencil2Brush = MakeMouseSafeBrush(new PencilBrush2(canvas));
+    const pencilBrush = makeMouseSafeBrush(new PencilBrush(canvas));
+    const arrowBrush = makeMouseSafeBrush(new StraightArrowBrush(canvas));
+    const curvedArrowBrush = makeMouseSafeBrush(new CurvedArrowBrush(canvas));
+    const circleBrush = makeMouseSafeBrush(new CircleBrush(canvas));
+    const pencil2Brush = makeMouseSafeBrush(new PencilBrush2(canvas));
     canvas.freeDrawingBrush = pencilBrush;
     canvas._brushes = {
       pencil: pencilBrush,
@@ -171,15 +206,29 @@ export default function Whiteboard({
       pushHistory({ type: "addBasic", object: e.path });
     };
 
-    const onMoleculeEdgeSetAdd = (e) => {
-      pushHistory({ type: "addMoleculeEdgeSet", object: e.edgeLines });
+    const onMoleculePathAdd = (e) => {
+      console.log(e);
+      e.newNodes.forEach((node) => {
+        node.obj.set({ fill: "transparent" });
+        canvas.moleculeStuff.graph.addNode(node.id, node);
+      });
+      e.newEdges.forEach((edge) => {
+        edge.obj.set({ stroke: colorRef.current });
+        canvas.moleculeStuff.graph.addEdge(
+          edge.nodes[0].id,
+          edge.nodes[1].id,
+          edge,
+        );
+      });
+      canvas.renderAll();
+      pushHistory({ type: "moleculePathAdd", object: e });
     };
 
     canvas.on("mouse:down", onMouseDown);
     canvas.on("mouse:move", onMouseMove);
     canvas.on("mouse:up", onMouseUp);
     canvas.on("path:created", onPathCreated);
-    canvas.on("custom:moleculeEdgeSetAdd", onMoleculeEdgeSetAdd);
+    canvas.on("custom:moleculePathAdd", onMoleculePathAdd);
 
     const undo = () => {
       const op = undoStackRef.current.pop();
@@ -188,8 +237,14 @@ export default function Whiteboard({
       if (op.type === "addBasic") {
         canvas.remove(op.object);
         redoStackRef.current.push(op);
-      } else if (op.type === "addMoleculeEdgeSet") {
-        canvas.remove(...op.object);
+      } else if (op.type === "moleculePathAdd") {
+        op.object.newNodes.forEach((n) => {
+          canvas.moleculeStuff.graph.dropNode(n.id);
+          canvas.remove(n.obj);
+        });
+        op.object.newEdges.forEach((edge) => {
+          canvas.remove(edge.obj);
+        });
         redoStackRef.current.push(op);
       }
       canvas.renderAll();
@@ -203,8 +258,19 @@ export default function Whiteboard({
       if (op.type === "addBasic") {
         canvas.add(op.object);
         undoStackRef.current.push(op);
-      } else if (op.type === "addMoleculeEdgeSet") {
-        canvas.add(...op.object);
+      } else if (op.type === "moleculePathAdd") {
+        op.object.newNodes.forEach((n) => {
+          canvas.moleculeStuff.graph.addNode(n.id, n);
+          canvas.add(n.obj);
+        });
+        op.object.newEdges.forEach((edge) => {
+          canvas.add(edge.obj);
+          canvas.moleculeStuff.graph.addEdge(
+            edge.nodes[0].id,
+            edge.nodes[1].id,
+            edge,
+          );
+        });
         undoStackRef.current.push(op);
       }
       canvas.renderAll();

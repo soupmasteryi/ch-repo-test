@@ -17,6 +17,8 @@ import CurvedArrowBrush from "./CurvedArrowBrush";
 import CircleBrush from "./CircleBrush";
 import PencilBrush2 from "./PencilBrush2";
 
+const STR =
+  '{"version":"7.4.0","_history":{"undoStack":[{"type":"moleculePathAdd","object":{"newNodes":[{"id":"0","_obj_ref":null,"point":{"x":307.44504388381614,"y":279.0508250887863}},{"id":"1","_obj_ref":null,"point":{"x":368.0668221487268,"y":244.0508250887863}},{"id":"3","_obj_ref":null,"point":{"x":428.6886004136375,"y":279.0508250887863}},{"id":"4","_obj_ref":null,"point":{"x":428.6886004136375,"y":349.0508250887863}}],"newEdges":[{"id":"0","_obj_ref":null,"nodes":[{"id":"0","_obj_ref":null,"point":{"x":307.44504388381614,"y":279.0508250887863}},{"id":"1","_obj_ref":null,"point":{"x":368.0668221487268,"y":244.0508250887863}}]},{"id":"2","_obj_ref":null,"nodes":[{"id":"1","_obj_ref":null,"point":{"x":368.0668221487268,"y":244.0508250887863}},{"id":"3","_obj_ref":null,"point":{"x":428.6886004136375,"y":279.0508250887863}}]},{"id":"3","_obj_ref":null,"nodes":[{"id":"3","_obj_ref":null,"point":{"x":428.6886004136375,"y":279.0508250887863}},{"id":"4","_obj_ref":null,"point":{"x":428.6886004136375,"y":349.0508250887863}}]}]}}],"redoStack":[]},"_moleculeStuff":{"nodeLabelId":5,"edgeLabelId":4,"graph":{"options":{"type":"undirected","multi":false,"allowSelfLoops":true},"attributes":{},"nodes":[{"key":"0","attributes":{"id":"0","_obj_ref":null,"point":{"x":307.44504388381614,"y":279.0508250887863}}},{"key":"1","attributes":{"id":"1","_obj_ref":null,"point":{"x":368.0668221487268,"y":244.0508250887863}}},{"key":"3","attributes":{"id":"3","_obj_ref":null,"point":{"x":428.6886004136375,"y":279.0508250887863}}},{"key":"4","attributes":{"id":"4","_obj_ref":null,"point":{"x":428.6886004136375,"y":349.0508250887863}}}],"edges":[{"key":"geid_58_0","source":"0","target":"1","attributes":{"id":"0","_obj_ref":null,"nodes":[{"id":"0","_obj_ref":null,"point":{"x":307.44504388381614,"y":279.0508250887863}},{"id":"1","_obj_ref":null,"point":{"x":368.0668221487268,"y":244.0508250887863}}]}},{"key":"geid_58_1","source":"1","target":"3","attributes":{"id":"2","_obj_ref":null,"nodes":[{"id":"1","_obj_ref":null,"point":{"x":368.0668221487268,"y":244.0508250887863}},{"id":"3","_obj_ref":null,"point":{"x":428.6886004136375,"y":279.0508250887863}}]}},{"key":"geid_58_2","source":"3","target":"4","attributes":{"id":"3","_obj_ref":null,"nodes":[{"id":"3","_obj_ref":null,"point":{"x":428.6886004136375,"y":279.0508250887863}},{"id":"4","_obj_ref":null,"point":{"x":428.6886004136375,"y":349.0508250887863}}]}}]}},"objects":[{"radius":14,"startAngle":0,"endAngle":360,"counterClockwise":false,"_custom_id":"0","type":"Circle","version":"7.4.0","originX":"center","originY":"center","left":307.445,"top":279.0508,"width":28,"height":28,"fill":"transparent","stroke":null,"strokeWidth":1,"strokeDashArray":null,"strokeLineCap":"butt","strokeDashOffset":0,"strokeLineJoin":"miter","strokeUniform":false,"strokeMiterLimit":4,"scaleX":1,"scaleY":1,"angle":0,"flipX":false,"flipY":false,"opacity":1,"shadow":null,"visible":true,"backgroundColor":"","fillRule":"nonzero","paintFirst":"fill","globalCompositeOperation":"source-over","skewX":0,"skewY":0},{"_custom_id":"0","type":"Line","version":"7.4.0","originX":"center","originY":"center","left":337.7559,"top":261.5508,"width":60.6218,"height":35,"fill":"rgb(0,0,0)","stroke":"#000000","strokeWidth":3,"strokeDashArray":null,"strokeLineCap":"round","strokeDashOffset":0,"strokeLineJoin":"miter","strokeUniform":false,"strokeMiterLimit":4,"scaleX":1,"scaleY":1,"angle":0,"flipX":false,"flipY":false,"opacity":1,"shadow":null,"visible":true,"backgroundColor":"","fillRule":"nonzero","paintFirst":"fill","globalCompositeOperation":"source-over","skewX":0,"skewY":0,"x1":-30.310889132455344,"x2":30.310889132455344,"y1":17.500000000000014,"y2":-17.500000000000014},{"radius":14,"startAngle":0,"endAngle":360,"counterClockwise":false,"_custom_id":"1","type":"Circle","version":"7.4.0","originX":"center","originY":"center","left":368.0668,"top":244.0508,"width":28,"height":28,"fill":"transparent","stroke":null,"strokeWidth":1,"strokeDashArray":null,"strokeLineCap":"butt","strokeDashOffset":0,"strokeLineJoin":"miter","strokeUniform":false,"strokeMiterLimit":4,"scaleX":1,"scaleY":1,"angle":0,"flipX":false,"flipY":false,"opacity":1,"shadow":null,"visible":true,"backgroundColor":"","fillRule":"nonzero","paintFirst":"fill","globalCompositeOperation":"source-over","skewX":0,"skewY":0},{"_custom_id":"2","type":"Line","version":"7.4.0","originX":"center","originY":"center","left":398.3777,"top":261.5508,"width":60.6218,"height":35,"fill":"rgb(0,0,0)","stroke":"#000000","strokeWidth":3,"strokeDashArray":null,"strokeLineCap":"round","strokeDashOffset":0,"strokeLineJoin":"miter","strokeUniform":false,"strokeMiterLimit":4,"scaleX":1,"scaleY":1,"angle":0,"flipX":false,"flipY":false,"opacity":1,"shadow":null,"visible":true,"backgroundColor":"","fillRule":"nonzero","paintFirst":"fill","globalCompositeOperation":"source-over","skewX":0,"skewY":0,"x1":-30.310889132455344,"x2":30.310889132455344,"y1":-17.500000000000014,"y2":17.500000000000014},{"radius":14,"startAngle":0,"endAngle":360,"counterClockwise":false,"_custom_id":"3","type":"Circle","version":"7.4.0","originX":"center","originY":"center","left":428.6886,"top":279.0508,"width":28,"height":28,"fill":"transparent","stroke":null,"strokeWidth":1,"strokeDashArray":null,"strokeLineCap":"butt","strokeDashOffset":0,"strokeLineJoin":"miter","strokeUniform":false,"strokeMiterLimit":4,"scaleX":1,"scaleY":1,"angle":0,"flipX":false,"flipY":false,"opacity":1,"shadow":null,"visible":true,"backgroundColor":"","fillRule":"nonzero","paintFirst":"fill","globalCompositeOperation":"source-over","skewX":0,"skewY":0},{"_custom_id":"3","type":"Line","version":"7.4.0","originX":"center","originY":"center","left":428.6886,"top":314.0508,"width":0,"height":70,"fill":"rgb(0,0,0)","stroke":"#000000","strokeWidth":3,"strokeDashArray":null,"strokeLineCap":"round","strokeDashOffset":0,"strokeLineJoin":"miter","strokeUniform":false,"strokeMiterLimit":4,"scaleX":1,"scaleY":1,"angle":0,"flipX":false,"flipY":false,"opacity":1,"shadow":null,"visible":true,"backgroundColor":"","fillRule":"nonzero","paintFirst":"fill","globalCompositeOperation":"source-over","skewX":0,"skewY":0,"x1":0,"x2":0,"y1":-35,"y2":35},{"radius":14,"startAngle":0,"endAngle":360,"counterClockwise":false,"_custom_id":"4","type":"Circle","version":"7.4.0","originX":"center","originY":"center","left":428.6886,"top":349.0508,"width":28,"height":28,"fill":"transparent","stroke":null,"strokeWidth":1,"strokeDashArray":null,"strokeLineCap":"butt","strokeDashOffset":0,"strokeLineJoin":"miter","strokeUniform":false,"strokeMiterLimit":4,"scaleX":1,"scaleY":1,"angle":0,"flipX":false,"flipY":false,"opacity":1,"shadow":null,"visible":true,"backgroundColor":"","fillRule":"nonzero","paintFirst":"fill","globalCompositeOperation":"source-over","skewX":0,"skewY":0}],"background":"#ffffff"}';
 const A4_WIDTH = 794;
 const A4_HEIGHT = 1123;
 
@@ -35,18 +37,31 @@ export default function Whiteboard({
   const toolRef = useRef(tool);
   const colorRef = useRef(color);
   const thicknessRef = useRef(thickness);
-  const undoStackRef = useRef([]);
-  const redoStackRef = useRef([]);
   const isMouseDown = useRef(false);
   const isRestoringRef = useRef(false);
 
   useEffect(() => {
+    console.log(canvasElRef.current);
     const canvas = new Canvas(canvasElRef.current, {
       backgroundColor: "#ffffff",
       selection: false,
     });
 
-    canvas.moleculeStuff = {
+    canvas._history = {
+      undoStack: [],
+      redoStack: [],
+    };
+
+    canvas._moleculeStuff = {
+      nodeLabelId: 0,
+      edgeLabelId: 0,
+
+      getNewNodeId() {
+        return "" + this.nodeLabelId++;
+      },
+      getNewEdgeId() {
+        return "" + this.edgeLabelId++;
+      },
       getNodeFill() {
         const color = new Color(canvas.backgroundColor);
         color.getSource()[0] = 255 - color.getSource()[0];
@@ -54,36 +69,20 @@ export default function Whiteboard({
         color.getSource()[2] = 255 - color.getSource()[2];
         return color.setAlpha(0.2).toRgba();
       },
-      /*graphNodeId: 0,
-      graphLabels: [],
-      getNewLabel() {
-        return this.graphNodeId++;
-      },
-      createNode(node) {
-        const entry = {
-          node,
-          label: this.getNewLabel(),
-        };
-        this.graphLabels.push(entry);
-        return entry;
-      },
-      getNode(node) {
-        return this.graphLabels.find((ent) => ent.node === node);
-      },
-      deleteNode(node) {
-        const n = this.graphLabels.findIndex((ent) => ent.node === node);
-        if (0 <= n && n < this.graphLabels.length)
-          this.graphLabels.splice(n, 1);
-      }*/
       getClosestNode(point, distanceMargin) {
-        return this.graph.findNode((node, attr) => {
+        const node = this.graph.findNode((node, attr) => {
           const dx = attr.point.x - point.x;
           const dy = attr.point.y - point.y;
           return Math.hypot(dx, dy) <= distanceMargin + 0.01;
         });
+        return node ? this.graph.getNodeAttributes(node) : undefined;
       },
       graph: new UndirectedGraph(),
     };
+
+    canvas.setDimensions({ width: A4_WIDTH, height: A4_HEIGHT });
+
+    canvas.renderAll();
     fabricRef.current = canvas;
 
     const pencilBrush = makeMouseSafeBrush(new PencilBrush(canvas));
@@ -100,13 +99,10 @@ export default function Whiteboard({
       pencil2: pencil2Brush,
     };
 
-    canvas.setDimensions({ width: A4_WIDTH, height: A4_HEIGHT });
-    canvas.renderAll();
-
     const pushHistory = (op) => {
       if (isRestoringRef.current) return;
-      undoStackRef.current.push(op);
-      redoStackRef.current = [];
+      canvas._history.undoStack.push(op);
+      canvas._history.redoStack = [];
     };
 
     let shape = null;
@@ -201,27 +197,90 @@ export default function Whiteboard({
       origin = null;
     };
 
-    const onPathCreated = (e) => {
-      e.path.set({ selectable: false, evented: false });
-      pushHistory({ type: "addBasic", object: e.path });
+    const onPathCreated = (ev) => {
+      ev.path.set({ selectable: false, evented: false });
+      pushHistory({ type: "addBasic", object: ev.path });
     };
 
-    const onMoleculePathAdd = (e) => {
-      console.log(e);
-      e.newNodes.forEach((node) => {
-        node.obj.set({ fill: "transparent" });
-        canvas.moleculeStuff.graph.addNode(node.id, node);
-      });
-      e.newEdges.forEach((edge) => {
-        edge.obj.set({ stroke: colorRef.current });
-        canvas.moleculeStuff.graph.addEdge(
+    const onMoleculePathAdd = (ev) => {
+      let overlappedNode = undefined;
+      let overlappingNode = undefined;
+      let overlappingNodeCutoff = undefined;
+      for (const [ind, node] of ev.newNodes.entries()) {
+        const firstNodeNoCheck = ev.firstNodeCreatedByBrush && ind === 0;
+        if (!firstNodeNoCheck) {
+          overlappedNode = canvas._moleculeStuff.getClosestNode(
+            node.point,
+            canvas.freeDrawingBrush._getNodeAttachRadius(),
+          );
+          if (overlappedNode) {
+            overlappingNode = node;
+            overlappingNodeCutoff = ind;
+            break;
+          }
+        }
+        node._obj_ref.set({ fill: "transparent" });
+        canvas._moleculeStuff.graph.addNode(node.id, node);
+      }
+      let lastEdgeIndex = undefined;
+      for (const [ind, edge] of ev.newEdges.entries()) {
+        if (overlappedNode && edge.nodes[1] === overlappingNode) {
+          lastEdgeIndex = ind + 1;
+          edge.nodes[1] = overlappedNode;
+          if (
+            canvas._moleculeStuff.graph.areNeighbors(
+              edge.nodes[0].id,
+              edge.nodes[1].id,
+            )
+          ) {
+            lastEdgeIndex = ind;
+            break;
+          }
+          edge._obj_ref.set({
+            stroke: colorRef.current,
+            x2: overlappedNode.point.x,
+            y2: overlappedNode.point.y,
+          });
+          canvas._moleculeStuff.graph.addEdge(
+            edge.nodes[0].id,
+            edge.nodes[1].id,
+            edge,
+          );
+          break;
+        }
+        edge._obj_ref.set({ stroke: colorRef.current });
+        canvas._moleculeStuff.graph.addEdge(
           edge.nodes[0].id,
           edge.nodes[1].id,
           edge,
         );
-      });
+      }
+      if (overlappedNode !== undefined) {
+        ev.newNodes.slice(overlappingNodeCutoff).forEach((n) => {
+          canvas.remove(n._obj_ref);
+        });
+        ev.newNodes = ev.newNodes.slice(0, overlappingNodeCutoff);
+      }
+      if (lastEdgeIndex !== undefined) {
+        ev.newEdges.slice(lastEdgeIndex).forEach((e) => {
+          canvas.remove(e._obj_ref);
+        });
+        ev.newEdges = ev.newEdges.slice(0, lastEdgeIndex);
+      }
       canvas.renderAll();
-      pushHistory({ type: "moleculePathAdd", object: e });
+      pushHistory({
+        type: "moleculePathAdd",
+        object: {
+          newNodes: ev.newNodes,
+          newEdges: ev.newEdges,
+        },
+      });
+      console.log(
+        JSON.stringify(
+          canvas.toObject(["_history", "_moleculeStuff", "_custom_id"]),
+          (key, val) => (key == "_obj_ref" ? null : val),
+        ),
+      );
     };
 
     canvas.on("mouse:down", onMouseDown);
@@ -231,47 +290,64 @@ export default function Whiteboard({
     canvas.on("custom:moleculePathAdd", onMoleculePathAdd);
 
     const undo = () => {
-      const op = undoStackRef.current.pop();
+      const op = canvas._history.undoStack.pop();
       if (!op) return;
       isRestoringRef.current = true;
       if (op.type === "addBasic") {
         canvas.remove(op.object);
-        redoStackRef.current.push(op);
+        canvas._history.redoStack.push(op);
       } else if (op.type === "moleculePathAdd") {
+        op.object.newEdges.forEach((e) => {
+          canvas._moleculeStuff.graph.dropEdge(e.nodes[0].id, e.nodes[1].id);
+          canvas.remove(
+            e._obj_ref ??
+              (e._obj_ref = canvas
+                .getObjects("Line")
+                .find((o) => o._custom_id == e.id)),
+          );
+        });
         op.object.newNodes.forEach((n) => {
-          canvas.moleculeStuff.graph.dropNode(n.id);
-          canvas.remove(n.obj);
+          canvas._moleculeStuff.graph.dropNode(n.id);
+          canvas.remove(
+            n._obj_ref ??
+              (n._obj_ref = canvas
+                .getObjects()
+                .find((o) => o._custom_id == n.id)),
+          );
         });
-        op.object.newEdges.forEach((edge) => {
-          canvas.remove(edge.obj);
-        });
-        redoStackRef.current.push(op);
+        canvas._history.redoStack.push(op);
       }
       canvas.renderAll();
       isRestoringRef.current = false;
     };
 
     const redo = () => {
-      const op = redoStackRef.current.pop();
+      const op = canvas._history.redoStack.pop();
       if (!op) return;
       isRestoringRef.current = true;
       if (op.type === "addBasic") {
         canvas.add(op.object);
-        undoStackRef.current.push(op);
+        canvas._history.undoStack.push(op);
       } else if (op.type === "moleculePathAdd") {
         op.object.newNodes.forEach((n) => {
-          canvas.moleculeStuff.graph.addNode(n.id, n);
-          canvas.add(n.obj);
-        });
-        op.object.newEdges.forEach((edge) => {
-          canvas.add(edge.obj);
-          canvas.moleculeStuff.graph.addEdge(
-            edge.nodes[0].id,
-            edge.nodes[1].id,
-            edge,
+          canvas._moleculeStuff.graph.addNode(n.id, n);
+          canvas.add(
+            n._obj_ref ??
+              (n._obj_ref = canvas
+                .getObjects()
+                .find((o) => o._custom_id == n.id)),
           );
         });
-        undoStackRef.current.push(op);
+        op.object.newEdges.forEach((e) => {
+          canvas.add(
+            e._obj_ref ??
+              (e._obj_ref = canvas
+                .getObjects("Line")
+                .find((o) => o._custom_id == e.id)),
+          );
+          canvas._moleculeStuff.graph.addEdge(e.nodes[0].id, e.nodes[1].id, e);
+        });
+        canvas._history.undoStack.push(op);
       }
       canvas.renderAll();
       isRestoringRef.current = false;

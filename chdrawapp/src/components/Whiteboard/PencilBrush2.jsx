@@ -2,7 +2,6 @@ import { Circle, Color, Line, PencilBrush, Point, Rect } from "fabric";
 
 export default class PencilBrush2 extends PencilBrush {
   edgeLength = 70;
-  nodeLabelId = 0;
   newNodes = [];
   newEdges = [];
   prevPointWalkback = [];
@@ -17,9 +16,8 @@ export default class PencilBrush2 extends PencilBrush {
   _getNodeRadius() {
     return this.edgeLength * 0.2;
   }
-
-  _getNewNodeId() {
-    return "" + this.nodeLabelId++;
+  _getNodeAttachRadius() {
+    return this.edgeLength * 0.3;
   }
 
   _getWalkbackDistance() {
@@ -27,19 +25,22 @@ export default class PencilBrush2 extends PencilBrush {
   }
 
   onMouseDown(pointer, ev) {
-    this.canvas.moleculeStuff.graph.forEachNode((node, attr) => {
-      attr.obj.set({ fill: this.canvas.moleculeStuff.getNodeFill() });
+    this.canvas._moleculeStuff.graph.forEachNode((node, attr) => {
+      (
+        attr._obj_ref ??
+        (attr._obj_ref = this.canvas
+          .getObjects("Circle")
+          .find((o) => o._custom_id == attr.id))
+      ).set({ fill: this.canvas._moleculeStuff.getNodeFill() });
     });
     this.canvas.renderAll();
 
-    const closestNodeKey = this.canvas.moleculeStuff.getClosestNode(
+    const closestNode = this.canvas._moleculeStuff.getClosestNode(
       pointer,
-      this._getNodeRadius(),
+      this._getNodeAttachRadius(),
     );
-    if (closestNodeKey) {
-      this.nodeStartPoint =
-        this.canvas.moleculeStuff.graph.getNodeAttributes(closestNodeKey);
-      console.log(this.nodeStartPoint);
+    if (closestNode) {
+      this.nodeStartPoint = closestNode;
       super.onMouseDown(this.nodeStartPoint.point, ev);
     } else {
       super.onMouseDown(pointer, ev);
@@ -63,9 +64,12 @@ export default class PencilBrush2 extends PencilBrush {
           this.oldEnd = undefined;
 
           this.prevPointWalkback.pop();
-          this.canvas.remove(this.newEdges.pop().obj, this.newNodes.pop().obj);
+          this.canvas.remove(
+            this.newEdges.pop()._obj_ref,
+            this.newNodes.pop()._obj_ref,
+          );
           if (!this.nodeStartPoint && this.newNodes.length === 1) {
-            this.canvas.remove(this.newNodes.pop().obj);
+            this.canvas.remove(this.newNodes.pop()._obj_ref);
           }
           this.canvas.renderAll();
 
@@ -86,33 +90,20 @@ export default class PencilBrush2 extends PencilBrush {
         this._points = [];
         this.oldEnd = undefined;
 
-        const correctedAngle = this._roundAngle(Math.atan2(dy, dx));
-        const p2Corrected = new Point({
-          x: p1.x - this.edgeLength * Math.cos(correctedAngle),
-          y: p1.y - this.edgeLength * Math.sin(correctedAngle),
-        });
-
-        const edgeObj = new Line([p1.x, p1.y, p2Corrected.x, p2Corrected.y], {
-          stroke: this.color,
-          strokeWidth: this.width,
-          strokeLineCap: "round",
-          selectable: false,
-          evented: false,
-        });
-
         if (!this.nodeStartPoint && this.newNodes.length === 0) {
           const startNodeObj = new Circle({
             radius: this._getNodeRadius(),
-            fill: this.canvas.moleculeStuff.getNodeFill(),
+            fill: this.canvas._moleculeStuff.getNodeFill(),
             left: p1.x,
             top: p1.y,
             selectable: false,
             evented: false,
+            _custom_id: this.canvas._moleculeStuff.getNewNodeId(),
           });
 
           const startNode = {
-            id: this._getNewNodeId(),
-            obj: startNodeObj,
+            id: startNodeObj._custom_id,
+            _obj_ref: startNodeObj,
             point: p1,
           };
 
@@ -120,13 +111,36 @@ export default class PencilBrush2 extends PencilBrush {
           this.canvas.add(startNodeObj);
         }
 
-        const nodeObj = new Circle({
+        const correctedAngle = this._roundAngle(Math.atan2(dy, dx));
+        const p2Corrected = new Point({
+          x: p1.x - this.edgeLength * Math.cos(correctedAngle),
+          y: p1.y - this.edgeLength * Math.sin(correctedAngle),
+        });
+
+        const currentNodeObj = new Circle({
           radius: this._getNodeRadius(),
-          fill: this.canvas.moleculeStuff.getNodeFill(),
+          fill: this.canvas._moleculeStuff.getNodeFill(),
           left: p2Corrected.x,
           top: p2Corrected.y,
           selectable: false,
           evented: false,
+          _custom_id: this.canvas._moleculeStuff.getNewNodeId(),
+        });
+
+        const currentNode = {
+          id: currentNodeObj._custom_id,
+          _obj_ref: currentNodeObj,
+          point: p2Corrected,
+        };
+        this.newNodes.push(currentNode);
+
+        const edgeObj = new Line([p1.x, p1.y, p2Corrected.x, p2Corrected.y], {
+          stroke: this.color,
+          strokeWidth: this.width,
+          strokeLineCap: "round",
+          selectable: false,
+          evented: false,
+          _custom_id: this.canvas._moleculeStuff.getNewEdgeId(),
         });
 
         const startPointIsPreexisting =
@@ -134,23 +148,17 @@ export default class PencilBrush2 extends PencilBrush {
 
         const prevNode = startPointIsPreexisting
           ? this.nodeStartPoint
-          : this.newNodes.at(-1);
-
-        const currentNode = {
-          id: this._getNewNodeId(),
-          obj: nodeObj,
-          point: p2Corrected,
-        };
-        this.newNodes.push(currentNode);
+          : this.newNodes.at(-2);
 
         this.newEdges.push({
-          obj: edgeObj,
-          nodes: [currentNode, prevNode],
+          id: edgeObj._custom_id,
+          _obj_ref: edgeObj,
+          nodes: [prevNode, currentNode],
         });
 
         this.prevPointWalkback.push(p1);
 
-        this.canvas.add(edgeObj, nodeObj);
+        this.canvas.add(edgeObj, currentNodeObj);
         this.canvas.renderAll();
 
         super._prepareForDrawing(p2Corrected);
@@ -163,10 +171,9 @@ export default class PencilBrush2 extends PencilBrush {
     this.canvas.clearContext(ctx);
     this._points = [];
     this.oldEnd = undefined;
-    this.nodeStartPoint = undefined;
 
-    this.canvas.moleculeStuff.graph.forEachNode((node, attr) => {
-      attr.obj.set({ fill: "transparent" });
+    this.canvas._moleculeStuff.graph.forEachNode((node, attr) => {
+      attr._obj_ref.set({ fill: "transparent" });
     });
     this.canvas.renderAll();
 
@@ -174,11 +181,14 @@ export default class PencilBrush2 extends PencilBrush {
       this.canvas.fire("custom:moleculePathAdd", {
         newNodes: this.newNodes.slice(),
         newEdges: this.newEdges.slice(),
+        nodeStartPoint: this.nodeStartPoint,
+        firstNodeCreatedByBrush: this.nodeStartPoint === undefined,
       });
-
-      this.newNodes = [];
-      this.newEdges = [];
-      this.prevPointWalkback = [];
     }
+
+    this.nodeStartPoint = undefined;
+    this.newNodes = [];
+    this.newEdges = [];
+    this.prevPointWalkback = [];
   }
 }

@@ -20,6 +20,29 @@
   background: #2a2a2a;
 }
 
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header-load {
+  background: #2d2d30;
+  color: #ddd;
+  border: 1px solid #444;
+  padding: 6px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  text-transform: lowercase;
+}
+
+.header-load:hover {
+  background: #094771;
+  border-color: #1d7be3;
+  color: #fff;
+}
+
 .header-login {
   background: #1d7be3;
   color: #fff;

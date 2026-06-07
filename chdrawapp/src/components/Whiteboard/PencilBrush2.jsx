@@ -31,7 +31,11 @@ export default class PencilBrush2 extends PencilBrush {
         (attr._obj_ref = this.canvas
           .getObjects("Circle")
           .find((o) => o._custom_id == attr.id))
-      ).set({ fill: this.canvas._moleculeStuff.getNodeFill() });
+      ).set({
+        fill: this.canvas._moleculeStuff.getNodeFill(
+          this.canvas.backgroundColor,
+        ),
+      });
     });
     this.canvas.renderAll();
 
@@ -41,7 +45,7 @@ export default class PencilBrush2 extends PencilBrush {
     );
     if (closestNode) {
       this.nodeStartPoint = closestNode;
-      super.onMouseDown(this.nodeStartPoint.point, ev);
+      super.onMouseDown(this.nodeStartPoint.point_coords, ev);
     } else {
       super.onMouseDown(pointer, ev);
     }
@@ -93,7 +97,9 @@ export default class PencilBrush2 extends PencilBrush {
         if (!this.nodeStartPoint && this.newNodes.length === 0) {
           const startNodeObj = new Circle({
             radius: this._getNodeRadius(),
-            fill: this.canvas._moleculeStuff.getNodeFill(),
+            fill: this.canvas._moleculeStuff.getNodeFill(
+              this.canvas.backgroundColor,
+            ),
             left: p1.x,
             top: p1.y,
             selectable: false,
@@ -104,7 +110,7 @@ export default class PencilBrush2 extends PencilBrush {
           const startNode = {
             id: startNodeObj._custom_id,
             _obj_ref: startNodeObj,
-            point: p1,
+            point_coords: p1,
           };
 
           this.newNodes.push(startNode);
@@ -119,7 +125,9 @@ export default class PencilBrush2 extends PencilBrush {
 
         const currentNodeObj = new Circle({
           radius: this._getNodeRadius(),
-          fill: this.canvas._moleculeStuff.getNodeFill(),
+          fill: this.canvas._moleculeStuff.getNodeFill(
+            this.canvas.backgroundColor,
+          ),
           left: p2Corrected.x,
           top: p2Corrected.y,
           selectable: false,
@@ -130,7 +138,7 @@ export default class PencilBrush2 extends PencilBrush {
         const currentNode = {
           id: currentNodeObj._custom_id,
           _obj_ref: currentNodeObj,
-          point: p2Corrected,
+          point_coords: p2Corrected,
         };
         this.newNodes.push(currentNode);
 
@@ -144,7 +152,7 @@ export default class PencilBrush2 extends PencilBrush {
         });
 
         const startPointIsPreexisting =
-          this.nodeStartPoint && this.newNodes.length === 0;
+          this.nodeStartPoint && this.newNodes.length === 1;
 
         const prevNode = startPointIsPreexisting
           ? this.nodeStartPoint
@@ -153,7 +161,7 @@ export default class PencilBrush2 extends PencilBrush {
         this.newEdges.push({
           id: edgeObj._custom_id,
           _obj_ref: edgeObj,
-          nodes: [prevNode, currentNode],
+          nodes: [{ ...prevNode }, { ...currentNode }],
         });
 
         this.prevPointWalkback.push(p1);

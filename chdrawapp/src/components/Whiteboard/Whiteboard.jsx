@@ -7,18 +7,19 @@ import {
   PencilBrush,
   Circle,
   Color,
+  Point,
+  util,
 } from "fabric";
 import { UndirectedGraph } from "graphology";
 
 import "./Whiteboard.css";
+import MoleculeStuff from "./MoleculeStuff";
 import makeMouseSafeBrush from "./makeMouseSafeBrush";
 import StraightArrowBrush from "./StraightArrowBrush";
 import CurvedArrowBrush from "./CurvedArrowBrush";
 import CircleBrush from "./CircleBrush";
 import PencilBrush2 from "./PencilBrush2";
 
-const STR =
-  '{"version":"7.4.0","_history":{"undoStack":[{"type":"moleculePathAdd","object":{"newNodes":[{"id":"0","_obj_ref":null,"point":{"x":307.44504388381614,"y":279.0508250887863}},{"id":"1","_obj_ref":null,"point":{"x":368.0668221487268,"y":244.0508250887863}},{"id":"3","_obj_ref":null,"point":{"x":428.6886004136375,"y":279.0508250887863}},{"id":"4","_obj_ref":null,"point":{"x":428.6886004136375,"y":349.0508250887863}}],"newEdges":[{"id":"0","_obj_ref":null,"nodes":[{"id":"0","_obj_ref":null,"point":{"x":307.44504388381614,"y":279.0508250887863}},{"id":"1","_obj_ref":null,"point":{"x":368.0668221487268,"y":244.0508250887863}}]},{"id":"2","_obj_ref":null,"nodes":[{"id":"1","_obj_ref":null,"point":{"x":368.0668221487268,"y":244.0508250887863}},{"id":"3","_obj_ref":null,"point":{"x":428.6886004136375,"y":279.0508250887863}}]},{"id":"3","_obj_ref":null,"nodes":[{"id":"3","_obj_ref":null,"point":{"x":428.6886004136375,"y":279.0508250887863}},{"id":"4","_obj_ref":null,"point":{"x":428.6886004136375,"y":349.0508250887863}}]}]}}],"redoStack":[]},"_moleculeStuff":{"nodeLabelId":5,"edgeLabelId":4,"graph":{"options":{"type":"undirected","multi":false,"allowSelfLoops":true},"attributes":{},"nodes":[{"key":"0","attributes":{"id":"0","_obj_ref":null,"point":{"x":307.44504388381614,"y":279.0508250887863}}},{"key":"1","attributes":{"id":"1","_obj_ref":null,"point":{"x":368.0668221487268,"y":244.0508250887863}}},{"key":"3","attributes":{"id":"3","_obj_ref":null,"point":{"x":428.6886004136375,"y":279.0508250887863}}},{"key":"4","attributes":{"id":"4","_obj_ref":null,"point":{"x":428.6886004136375,"y":349.0508250887863}}}],"edges":[{"key":"geid_58_0","source":"0","target":"1","attributes":{"id":"0","_obj_ref":null,"nodes":[{"id":"0","_obj_ref":null,"point":{"x":307.44504388381614,"y":279.0508250887863}},{"id":"1","_obj_ref":null,"point":{"x":368.0668221487268,"y":244.0508250887863}}]}},{"key":"geid_58_1","source":"1","target":"3","attributes":{"id":"2","_obj_ref":null,"nodes":[{"id":"1","_obj_ref":null,"point":{"x":368.0668221487268,"y":244.0508250887863}},{"id":"3","_obj_ref":null,"point":{"x":428.6886004136375,"y":279.0508250887863}}]}},{"key":"geid_58_2","source":"3","target":"4","attributes":{"id":"3","_obj_ref":null,"nodes":[{"id":"3","_obj_ref":null,"point":{"x":428.6886004136375,"y":279.0508250887863}},{"id":"4","_obj_ref":null,"point":{"x":428.6886004136375,"y":349.0508250887863}}]}}]}},"objects":[{"radius":14,"startAngle":0,"endAngle":360,"counterClockwise":false,"_custom_id":"0","type":"Circle","version":"7.4.0","originX":"center","originY":"center","left":307.445,"top":279.0508,"width":28,"height":28,"fill":"transparent","stroke":null,"strokeWidth":1,"strokeDashArray":null,"strokeLineCap":"butt","strokeDashOffset":0,"strokeLineJoin":"miter","strokeUniform":false,"strokeMiterLimit":4,"scaleX":1,"scaleY":1,"angle":0,"flipX":false,"flipY":false,"opacity":1,"shadow":null,"visible":true,"backgroundColor":"","fillRule":"nonzero","paintFirst":"fill","globalCompositeOperation":"source-over","skewX":0,"skewY":0},{"_custom_id":"0","type":"Line","version":"7.4.0","originX":"center","originY":"center","left":337.7559,"top":261.5508,"width":60.6218,"height":35,"fill":"rgb(0,0,0)","stroke":"#000000","strokeWidth":3,"strokeDashArray":null,"strokeLineCap":"round","strokeDashOffset":0,"strokeLineJoin":"miter","strokeUniform":false,"strokeMiterLimit":4,"scaleX":1,"scaleY":1,"angle":0,"flipX":false,"flipY":false,"opacity":1,"shadow":null,"visible":true,"backgroundColor":"","fillRule":"nonzero","paintFirst":"fill","globalCompositeOperation":"source-over","skewX":0,"skewY":0,"x1":-30.310889132455344,"x2":30.310889132455344,"y1":17.500000000000014,"y2":-17.500000000000014},{"radius":14,"startAngle":0,"endAngle":360,"counterClockwise":false,"_custom_id":"1","type":"Circle","version":"7.4.0","originX":"center","originY":"center","left":368.0668,"top":244.0508,"width":28,"height":28,"fill":"transparent","stroke":null,"strokeWidth":1,"strokeDashArray":null,"strokeLineCap":"butt","strokeDashOffset":0,"strokeLineJoin":"miter","strokeUniform":false,"strokeMiterLimit":4,"scaleX":1,"scaleY":1,"angle":0,"flipX":false,"flipY":false,"opacity":1,"shadow":null,"visible":true,"backgroundColor":"","fillRule":"nonzero","paintFirst":"fill","globalCompositeOperation":"source-over","skewX":0,"skewY":0},{"_custom_id":"2","type":"Line","version":"7.4.0","originX":"center","originY":"center","left":398.3777,"top":261.5508,"width":60.6218,"height":35,"fill":"rgb(0,0,0)","stroke":"#000000","strokeWidth":3,"strokeDashArray":null,"strokeLineCap":"round","strokeDashOffset":0,"strokeLineJoin":"miter","strokeUniform":false,"strokeMiterLimit":4,"scaleX":1,"scaleY":1,"angle":0,"flipX":false,"flipY":false,"opacity":1,"shadow":null,"visible":true,"backgroundColor":"","fillRule":"nonzero","paintFirst":"fill","globalCompositeOperation":"source-over","skewX":0,"skewY":0,"x1":-30.310889132455344,"x2":30.310889132455344,"y1":-17.500000000000014,"y2":17.500000000000014},{"radius":14,"startAngle":0,"endAngle":360,"counterClockwise":false,"_custom_id":"3","type":"Circle","version":"7.4.0","originX":"center","originY":"center","left":428.6886,"top":279.0508,"width":28,"height":28,"fill":"transparent","stroke":null,"strokeWidth":1,"strokeDashArray":null,"strokeLineCap":"butt","strokeDashOffset":0,"strokeLineJoin":"miter","strokeUniform":false,"strokeMiterLimit":4,"scaleX":1,"scaleY":1,"angle":0,"flipX":false,"flipY":false,"opacity":1,"shadow":null,"visible":true,"backgroundColor":"","fillRule":"nonzero","paintFirst":"fill","globalCompositeOperation":"source-over","skewX":0,"skewY":0},{"_custom_id":"3","type":"Line","version":"7.4.0","originX":"center","originY":"center","left":428.6886,"top":314.0508,"width":0,"height":70,"fill":"rgb(0,0,0)","stroke":"#000000","strokeWidth":3,"strokeDashArray":null,"strokeLineCap":"round","strokeDashOffset":0,"strokeLineJoin":"miter","strokeUniform":false,"strokeMiterLimit":4,"scaleX":1,"scaleY":1,"angle":0,"flipX":false,"flipY":false,"opacity":1,"shadow":null,"visible":true,"backgroundColor":"","fillRule":"nonzero","paintFirst":"fill","globalCompositeOperation":"source-over","skewX":0,"skewY":0,"x1":0,"x2":0,"y1":-35,"y2":35},{"radius":14,"startAngle":0,"endAngle":360,"counterClockwise":false,"_custom_id":"4","type":"Circle","version":"7.4.0","originX":"center","originY":"center","left":428.6886,"top":349.0508,"width":28,"height":28,"fill":"transparent","stroke":null,"strokeWidth":1,"strokeDashArray":null,"strokeLineCap":"butt","strokeDashOffset":0,"strokeLineJoin":"miter","strokeUniform":false,"strokeMiterLimit":4,"scaleX":1,"scaleY":1,"angle":0,"flipX":false,"flipY":false,"opacity":1,"shadow":null,"visible":true,"backgroundColor":"","fillRule":"nonzero","paintFirst":"fill","globalCompositeOperation":"source-over","skewX":0,"skewY":0}],"background":"#ffffff"}';
 const A4_WIDTH = 794;
 const A4_HEIGHT = 1123;
 
@@ -28,6 +29,9 @@ export default function Whiteboard({
   thickness,
   clearSignal,
   historyApiRef,
+  canvasLoadData,
+  setCanvasLoadData,
+  setIsLoading,
 }) {
   const containerRef = useRef(null);
   const canvasElRef = useRef(null);
@@ -41,7 +45,6 @@ export default function Whiteboard({
   const isRestoringRef = useRef(false);
 
   useEffect(() => {
-    console.log(canvasElRef.current);
     const canvas = new Canvas(canvasElRef.current, {
       backgroundColor: "#ffffff",
       selection: false,
@@ -52,33 +55,7 @@ export default function Whiteboard({
       redoStack: [],
     };
 
-    canvas._moleculeStuff = {
-      nodeLabelId: 0,
-      edgeLabelId: 0,
-
-      getNewNodeId() {
-        return "" + this.nodeLabelId++;
-      },
-      getNewEdgeId() {
-        return "" + this.edgeLabelId++;
-      },
-      getNodeFill() {
-        const color = new Color(canvas.backgroundColor);
-        color.getSource()[0] = 255 - color.getSource()[0];
-        color.getSource()[1] = 255 - color.getSource()[1];
-        color.getSource()[2] = 255 - color.getSource()[2];
-        return color.setAlpha(0.2).toRgba();
-      },
-      getClosestNode(point, distanceMargin) {
-        const node = this.graph.findNode((node, attr) => {
-          const dx = attr.point.x - point.x;
-          const dy = attr.point.y - point.y;
-          return Math.hypot(dx, dy) <= distanceMargin + 0.01;
-        });
-        return node ? this.graph.getNodeAttributes(node) : undefined;
-      },
-      graph: new UndirectedGraph(),
-    };
+    canvas._moleculeStuff = new MoleculeStuff();
 
     canvas.setDimensions({ width: A4_WIDTH, height: A4_HEIGHT });
 
@@ -210,7 +187,7 @@ export default function Whiteboard({
         const firstNodeNoCheck = ev.firstNodeCreatedByBrush && ind === 0;
         if (!firstNodeNoCheck) {
           overlappedNode = canvas._moleculeStuff.getClosestNode(
-            node.point,
+            node.point_coords,
             canvas.freeDrawingBrush._getNodeAttachRadius(),
           );
           if (overlappedNode) {
@@ -224,9 +201,9 @@ export default function Whiteboard({
       }
       let lastEdgeIndex = undefined;
       for (const [ind, edge] of ev.newEdges.entries()) {
-        if (overlappedNode && edge.nodes[1] === overlappingNode) {
+        if (overlappedNode && edge.nodes[1].id === overlappingNode.id) {
           lastEdgeIndex = ind + 1;
-          edge.nodes[1] = overlappedNode;
+          edge.nodes[1] = { ...overlappedNode };
           if (
             canvas._moleculeStuff.graph.areNeighbors(
               edge.nodes[0].id,
@@ -238,8 +215,8 @@ export default function Whiteboard({
           }
           edge._obj_ref.set({
             stroke: colorRef.current,
-            x2: overlappedNode.point.x,
-            y2: overlappedNode.point.y,
+            x2: overlappedNode.point_coords.x,
+            y2: overlappedNode.point_coords.y,
           });
           canvas._moleculeStuff.graph.addEdge(
             edge.nodes[0].id,
@@ -275,12 +252,6 @@ export default function Whiteboard({
           newEdges: ev.newEdges,
         },
       });
-      console.log(
-        JSON.stringify(
-          canvas.toObject(["_history", "_moleculeStuff", "_custom_id"]),
-          (key, val) => (key == "_obj_ref" ? null : val),
-        ),
-      );
     };
 
     canvas.on("mouse:down", onMouseDown);
@@ -303,7 +274,7 @@ export default function Whiteboard({
             e._obj_ref ??
               (e._obj_ref = canvas
                 .getObjects("Line")
-                .find((o) => o._custom_id == e.id)),
+                .find((o) => o._custom_id === e.id)),
           );
         });
         op.object.newNodes.forEach((n) => {
@@ -311,12 +282,37 @@ export default function Whiteboard({
           canvas.remove(
             n._obj_ref ??
               (n._obj_ref = canvas
-                .getObjects()
-                .find((o) => o._custom_id == n.id)),
+                .getObjects("Circle")
+                .find((o) => o._custom_id === n.id)),
           );
         });
         canvas._history.redoStack.push(op);
       }
+
+      /*console.log(
+        JSON.stringify(
+          (() => {
+            const c = canvas.toObject([
+              "_moleculeStuff",
+              "_history",
+              "_obj_ref",
+              "_custom_id",
+            ]);
+            for (const op of c._history.redoStack) {
+              if (op.type === "moleculePathAdd") {
+                op.object.newNodes.forEach((n) => {
+                  n._obj_data = n._obj_ref;
+                });
+                op.object.newEdges.forEach((e) => {
+                  e._obj_data = e._obj_ref;
+                });
+              }
+            }
+            return c;
+          })(),
+          (k, v) => (k === "_obj_ref" ? null : v),
+        ),
+      );*/
       canvas.renderAll();
       isRestoringRef.current = false;
     };
@@ -331,21 +327,13 @@ export default function Whiteboard({
       } else if (op.type === "moleculePathAdd") {
         op.object.newNodes.forEach((n) => {
           canvas._moleculeStuff.graph.addNode(n.id, n);
-          canvas.add(
-            n._obj_ref ??
-              (n._obj_ref = canvas
-                .getObjects()
-                .find((o) => o._custom_id == n.id)),
-          );
+          console.log(n._obj_ref);
+          console.log(canvas.getObjects("Circle").find((o) => o._custom_id));
+          canvas.add(n._obj_ref);
         });
         op.object.newEdges.forEach((e) => {
-          canvas.add(
-            e._obj_ref ??
-              (e._obj_ref = canvas
-                .getObjects("Line")
-                .find((o) => o._custom_id == e.id)),
-          );
           canvas._moleculeStuff.graph.addEdge(e.nodes[0].id, e.nodes[1].id, e);
+          canvas.add(e._obj_ref);
         });
         canvas._history.undoStack.push(op);
       }
@@ -354,7 +342,10 @@ export default function Whiteboard({
     };
 
     if (historyApiRef) {
-      historyApiRef.current = { undo, redo };
+      historyApiRef.current = {
+        undo,
+        redo,
+      };
     }
 
     const onKeyDown = (e) => {
@@ -452,6 +443,76 @@ export default function Whiteboard({
     canvas.renderAll();
     setPageHeight(newHeight);
   };
+
+  useEffect(() => {
+    if (!canvasLoadData || !fabricRef.current) {
+      return;
+    }
+    const canvas = fabricRef.current;
+    const abortController = new AbortController();
+    canvas
+      .loadFromJSON(
+        JSON.parse(canvasLoadData, (k, v) => {
+          if (k === "_moleculeStuff") {
+            return new MoleculeStuff({
+              ...v,
+              graph: new UndirectedGraph({ allowSelfLoops: false }).import(
+                v.graph,
+              ),
+            });
+          } else if (k === "point_coords") {
+            return new Point(v);
+          }
+          return v;
+        }),
+        undefined,
+        {
+          signal: abortController.signal,
+        },
+      )
+      .then((c) => {
+        const promises = [];
+        for (const op of c._history.redoStack) {
+          if (op.type === "moleculePathAdd") {
+            op.object.newNodes.forEach((n) => {
+              promises.push(
+                util.enlivenObjects([n._obj_data]).then(([obj_data]) => {
+                  n._obj_ref = obj_data;
+                }),
+              );
+            });
+            op.object.newEdges.forEach((e) => {
+              promises.push(
+                util.enlivenObjects([e._obj_data]).then(([obj_data]) => {
+                  e._obj_ref = obj_data;
+                }),
+              );
+            });
+          }
+        }
+        Promise.all(promises).then(() => {
+          console.log(
+            JSON.stringify(
+              c.toObject([
+                "_moleculeStuff",
+                "_history",
+                "_obj_ref",
+                "_custom_id",
+              ]),
+            ),
+          );
+          c.renderAll();
+          setCanvasLoadData(null);
+          setIsLoading(false);
+        });
+      });
+
+    return () => {
+      setCanvasLoadData(null);
+      setIsLoading(false);
+      abortController.abort();
+    };
+  }, [canvasLoadData]);
 
   return (
     <div className="whiteboard" ref={containerRef}>

@@ -218,18 +218,20 @@ export default function Whiteboard({
             x2: overlappedNode.point_coords.x,
             y2: overlappedNode.point_coords.y,
           });
-          canvas._moleculeStuff.graph.addEdge(
+          canvas._moleculeStuff.graph.addEdgeWithKey(
+            edge.id,
             edge.nodes[0].id,
             edge.nodes[1].id,
-            edge,
+            { ...edge },
           );
           break;
         }
         edge._obj_ref.set({ stroke: colorRef.current });
-        canvas._moleculeStuff.graph.addEdge(
+        canvas._moleculeStuff.graph.addEdgeWithKey(
+          edge.id,
           edge.nodes[0].id,
           edge.nodes[1].id,
-          edge,
+          { ...edge },
         );
       }
       if (overlappedNode !== undefined) {
@@ -245,13 +247,20 @@ export default function Whiteboard({
         ev.newEdges = ev.newEdges.slice(0, lastEdgeIndex);
       }
       canvas.renderAll();
-      pushHistory({
-        type: "moleculePathAdd",
-        object: {
-          newNodes: ev.newNodes,
-          newEdges: ev.newEdges,
-        },
-      });
+
+      if (ev.newNodes.length > 0 || ev.newEdges.length > 0) {
+        pushHistory({
+          type: "moleculePathAdd",
+          object: {
+            newNodes: ev.newNodes,
+            newEdges: ev.newEdges,
+          },
+        });
+      }
+    };
+
+    const onMoleculeEdgeMultiply = (ev) => {
+      pushHistory({ type: "moleculeEdgeMultiply", object: ev });
     };
 
     canvas.on("mouse:down", onMouseDown);
@@ -259,6 +268,7 @@ export default function Whiteboard({
     canvas.on("mouse:up", onMouseUp);
     canvas.on("path:created", onPathCreated);
     canvas.on("custom:moleculePathAdd", onMoleculePathAdd);
+    canvas.on("custom:moleculeEdgeMultiply", onMoleculeEdgeMultiply);
 
     const undo = () => {
       const op = canvas._history.undoStack.pop();
@@ -266,10 +276,9 @@ export default function Whiteboard({
       isRestoringRef.current = true;
       if (op.type === "addBasic") {
         canvas.remove(op.object);
-        canvas._history.redoStack.push(op);
       } else if (op.type === "moleculePathAdd") {
         op.object.newEdges.forEach((e) => {
-          canvas._moleculeStuff.graph.dropEdge(e.nodes[0].id, e.nodes[1].id);
+          canvas._moleculeStuff.graph.dropEdge(e.id);
           canvas.remove(
             e._obj_ref ??
               (e._obj_ref = canvas
@@ -286,10 +295,27 @@ export default function Whiteboard({
                 .find((o) => o._custom_id === n.id)),
           );
         });
-        canvas._history.redoStack.push(op);
+      } else if (op.type === "moleculeEdgeMultiply") {
+        const edge = op.object;
+        const graphEdge = edge.multipliedEdge;
+        canvas._moleculeStuff.graph.mergeEdgeWithKey(
+          graphEdge.id,
+          graphEdge.nodes[0].id,
+          graphEdge.nodes[1].id,
+          {
+            [edge.slot]: undefined,
+          },
+        );
+        canvas.remove(
+          edge._obj_ref ??
+            (edge._obj_ref = canvas
+              .getObjects("Line")
+              .find((o) => o._custom_id === edge.id)),
+        );
       }
+      canvas._history.redoStack.push(op);
 
-      /*console.log(
+      console.log(
         JSON.stringify(
           (() => {
             const c = canvas.toObject([
@@ -306,13 +332,15 @@ export default function Whiteboard({
                 op.object.newEdges.forEach((e) => {
                   e._obj_data = e._obj_ref;
                 });
+              } else if (op.type === "moleculeEdgeMultiply") {
+                op.object._obj_data = op.object._obj_ref;
               }
             }
             return c;
           })(),
           (k, v) => (k === "_obj_ref" ? null : v),
         ),
-      );*/
+      );
       canvas.renderAll();
       isRestoringRef.current = false;
     };
@@ -323,20 +351,37 @@ export default function Whiteboard({
       isRestoringRef.current = true;
       if (op.type === "addBasic") {
         canvas.add(op.object);
-        canvas._history.undoStack.push(op);
       } else if (op.type === "moleculePathAdd") {
         op.object.newNodes.forEach((n) => {
           canvas._moleculeStuff.graph.addNode(n.id, n);
-          console.log(n._obj_ref);
-          console.log(canvas.getObjects("Circle").find((o) => o._custom_id));
           canvas.add(n._obj_ref);
         });
         op.object.newEdges.forEach((e) => {
-          canvas._moleculeStuff.graph.addEdge(e.nodes[0].id, e.nodes[1].id, e);
+          canvas._moleculeStuff.graph.addEdgeWithKey(
+            e.id,
+            e.nodes[0].id,
+            e.nodes[1].id,
+            e,
+          );
           canvas.add(e._obj_ref);
         });
-        canvas._history.undoStack.push(op);
+      } else if (op.type === "moleculeEdgeMultiply") {
+        const edge = op.object;
+        const graphEdge = edge.multipliedEdge;
+        canvas._moleculeStuff.graph.mergeEdgeWithKey(
+          graphEdge.id,
+          graphEdge.nodes[0].id,
+          graphEdge.nodes[1].id,
+          {
+            [edge.slot]: {
+              id: edge._obj_ref._custom_id,
+              _obj_ref: edge._obj_ref,
+            },
+          },
+        );
+        canvas.add(edge._obj_ref);
       }
+      canvas._history.undoStack.push(op);
       canvas.renderAll();
       isRestoringRef.current = false;
     };
@@ -470,9 +515,9 @@ export default function Whiteboard({
           signal: abortController.signal,
         },
       )
-      .then((c) => {
+      .then((cnv) => {
         const promises = [];
-        for (const op of c._history.redoStack) {
+        for (const op of cnv._history.redoStack) {
           if (op.type === "moleculePathAdd") {
             op.object.newNodes.forEach((n) => {
               promises.push(
@@ -488,12 +533,18 @@ export default function Whiteboard({
                 }),
               );
             });
+          } else if (op.type === "moleculeEdgeMultiply") {
+            promises.push(
+              util.enlivenObjects([op.object._obj_data]).then(([obj_data]) => {
+                op.object._obj_ref = obj_data;
+              }),
+            );
           }
         }
         Promise.all(promises).then(() => {
           console.log(
             JSON.stringify(
-              c.toObject([
+              cnv.toObject([
                 "_moleculeStuff",
                 "_history",
                 "_obj_ref",
@@ -501,10 +552,16 @@ export default function Whiteboard({
               ]),
             ),
           );
-          c.renderAll();
+          cnv.renderAll();
           setCanvasLoadData(null);
           setIsLoading(false);
         });
+      })
+      .catch((ev) => {
+        if (ev.target instanceof AbortSignal && ev.target.reason.name === "AbortError") {
+          return;
+        }
+        throw ev;
       });
 
     return () => {

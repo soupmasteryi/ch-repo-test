@@ -1,4 +1,5 @@
 import { Circle, Color, Line, PencilBrush, Point, Rect } from "fabric";
+import Graph from "graphology";
 
 export default class PencilBrush2 extends PencilBrush {
   edgeLength = 70;
@@ -16,6 +17,7 @@ export default class PencilBrush2 extends PencilBrush {
   _getNodeRadius() {
     return this.edgeLength * 0.2;
   }
+
   _getNodeAttachRadius() {
     return this.edgeLength * 0.3;
   }
@@ -24,13 +26,17 @@ export default class PencilBrush2 extends PencilBrush {
     return this.edgeLength * 0.3;
   }
 
+  _getMultiBondSeparator() {
+    return 8 + this.width * 1.5;
+  }
+
   onMouseDown(pointer, ev) {
     this.canvas._moleculeStuff.graph.forEachNode((node, attr) => {
       (
         attr._obj_ref ??
         (attr._obj_ref = this.canvas
           .getObjects("Circle")
-          .find((o) => o._custom_id == attr.id))
+          .find((o) => o._custom_id === attr.id))
       ).set({
         fill: this.canvas._moleculeStuff.getNodeFill(
           this.canvas.backgroundColor,
@@ -161,7 +167,10 @@ export default class PencilBrush2 extends PencilBrush {
         this.newEdges.push({
           id: edgeObj._custom_id,
           _obj_ref: edgeObj,
-          nodes: [{ ...prevNode }, { ...currentNode }],
+          nodes: [
+            { id: prevNode.id, point_coords: prevNode.point_coords },
+            { id: currentNode.id, point_coords: currentNode.point_coords },
+          ],
         });
 
         this.prevPointWalkback.push(p1);
@@ -174,9 +183,11 @@ export default class PencilBrush2 extends PencilBrush {
     }
   }
 
-  onMouseUp(pointer, ev) {
+  onMouseUp(ev) {
     const ctx = this.canvas.contextTop;
     this.canvas.clearContext(ctx);
+
+    const lastPoint = this._points.at(-1);
     this._points = [];
     this.oldEnd = undefined;
 
@@ -185,7 +196,149 @@ export default class PencilBrush2 extends PencilBrush {
     });
     this.canvas.renderAll();
 
-    if (this.newNodes.length > 0) {
+    const endNode =
+      this.newEdges.length <= 1 &&
+      this.canvas._moleculeStuff.getClosestNode(
+        lastPoint,
+        this._getNodeAttachRadius(),
+      );
+    const startNode = endNode && (this.nodeStartPoint ?? this.newNodes[0]);
+    const edgeAttr =
+      startNode &&
+      this.canvas._moleculeStuff.graph.areNeighbors(endNode.id, startNode.id) &&
+      this.canvas._moleculeStuff.graph.getEdgeAttributes(
+        startNode.id,
+        endNode.id,
+      );
+    if (edgeAttr && !(edgeAttr.edgeLeft && edgeAttr.edgeRight)) {
+      this.newNodes.forEach((n) => {
+        this.canvas.remove(n._obj_ref);
+      });
+      this.newEdges.forEach((e) => {
+        this.canvas.remove(e._obj_ref);
+      });
+      let pointB, pointA, idA, idB;
+      if (
+        endNode.point_coords.y - startNode.point_coords.y < -0.01 ||
+        (Math.abs(endNode.point_coords.y - startNode.point_coords.y) < 0.01 &&
+          endNode.point_coords.x > startNode.point_coords.x)
+      ) {
+        idA = startNode.id;
+        pointA = startNode.point_coords;
+        idB = endNode.id;
+        pointB = endNode.point_coords;
+      } else {
+        idA = endNode.id;
+        pointA = endNode.point_coords;
+        idB = startNode.id;
+        pointB = startNode.point_coords;
+      }
+      let angleBA = Math.atan2(pointA.y - pointB.y, pointA.x - pointB.x);
+      if (Math.abs(angleBA - 180) < 0.01) angleBA = 0;
+      const angleAB = angleBA === 0 ? 0 : angleBA - Math.PI;
+
+      let sharpestAngleB = Math.PI * 2;
+      let widestAngleB = 0;
+      for (const {
+        neighbor: nodeId,
+        attributes: node,
+      } of this.canvas._moleculeStuff.graph.neighborEntries(idB)) {
+        if (nodeId === idA) continue;
+        const pointC = node.point_coords;
+        let angleBC = Math.atan2(pointC.y - pointB.y, pointC.x - pointB.x);
+        if (angleBC > angleBA) angleBC -= Math.PI * 2;
+        const angleABC = angleBA - angleBC;
+        sharpestAngleB = Math.min(angleABC, sharpestAngleB);
+        widestAngleB = Math.max(angleABC, widestAngleB);
+      }
+
+      let sharpestAngleA = Math.PI * 2;
+      let widestAngleA = 0;
+
+      for (const {
+        neighbor: nodeId,
+        attributes: node,
+      } of this.canvas._moleculeStuff.graph.neighborEntries(idA)) {
+        if (nodeId === idB) continue;
+        const pointC = node.point_coords;
+        let angleAC = Math.atan2(pointC.y - pointA.y, pointC.x - pointA.x);
+        if (angleAC < angleAB) angleAC += Math.PI * 2;
+        const angleCAB = angleAC - angleAB;
+        sharpestAngleA = Math.min(angleCAB, sharpestAngleA);
+        widestAngleA = Math.max(angleCAB, widestAngleA);
+      }
+
+      let lineX1, lineY1, lineX2, lineY2;
+      if (angleBA === 0) angleBA = Math.PI;
+      const angleSumRight = sharpestAngleA + sharpestAngleB;
+      const angleSumLeft = Math.PI * 4 - widestAngleA - widestAngleB;
+      let freeEdgeSlot;
+      if (
+        !edgeAttr.edgeLeft &&
+        (edgeAttr.edgeRight ||
+          angleSumLeft - angleSumRight < -0.01 ||
+          (Math.abs(angleSumLeft - angleSumRight) < 0.01 &&
+            pointB.x - pointA.x < -0.01))
+      ) {
+        freeEdgeSlot = "edgeLeft";
+        lineX1 =
+          pointB.x +
+          this._getMultiBondSeparator() * Math.cos(angleBA + Math.PI / 3);
+        lineY1 =
+          pointB.y +
+          this._getMultiBondSeparator() * Math.sin(angleBA + Math.PI / 3);
+        lineX2 =
+          pointA.x +
+          this._getMultiBondSeparator() * Math.cos(angleAB - Math.PI / 3);
+        lineY2 =
+          pointA.y +
+          this._getMultiBondSeparator() * Math.sin(angleAB - Math.PI / 3);
+      } else {
+        freeEdgeSlot = "edgeRight";
+        lineX1 =
+          pointB.x +
+          this._getMultiBondSeparator() * Math.cos(angleBA - Math.PI / 3);
+        lineY1 =
+          pointB.y +
+          this._getMultiBondSeparator() * Math.sin(angleBA - Math.PI / 3);
+        lineX2 =
+          pointA.x +
+          this._getMultiBondSeparator() * Math.cos(angleAB + Math.PI / 3);
+        lineY2 =
+          pointA.y +
+          this._getMultiBondSeparator() * Math.sin(angleAB + Math.PI / 3);
+      }
+      const multipliedEdgeObj = new Line([lineX1, lineY1, lineX2, lineY2], {
+        stroke: new Color(this.color).setAlpha(1).toRgba(),
+        strokeWidth: this.width,
+        strokeLineCap: "round",
+        selectable: false,
+        evented: false,
+        _custom_id: this.canvas._moleculeStuff.getNewEdgeId(),
+      });
+      this.canvas._moleculeStuff.graph.mergeEdgeWithKey(
+        edgeAttr.id,
+        startNode.id,
+        endNode.id,
+        {
+          [freeEdgeSlot]: {
+            id: multipliedEdgeObj._custom_id,
+            _obj_ref: multipliedEdgeObj,
+          },
+        },
+      );
+      this.canvas.add(multipliedEdgeObj);
+      this.canvas.fire("custom:moleculeEdgeMultiply", {
+        multipliedEdge: {
+          id: edgeAttr.id,
+          nodes: edgeAttr.nodes,
+        },
+        slot: freeEdgeSlot,
+        id: multipliedEdgeObj._custom_id,
+        _obj_ref: multipliedEdgeObj,
+      });
+      this.canvas.renderAll();
+    } else if (this.newNodes.length > 0) {
       this.canvas.fire("custom:moleculePathAdd", {
         newNodes: this.newNodes.slice(),
         newEdges: this.newEdges.slice(),

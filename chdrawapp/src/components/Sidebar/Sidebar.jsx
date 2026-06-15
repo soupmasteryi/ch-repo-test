@@ -12,6 +12,8 @@ const TOOLS = [
   { id: "pencil2", label: "Pencil 2", icon: "✎" },
 ];
 
+const LINE_STYLES = ["solid", "dashed", "dotted"];
+
 export default function Sidebar({
   tool,
   onToolChange,
@@ -20,6 +22,10 @@ export default function Sidebar({
   colors,
   thickness,
   onThicknessChange,
+  edgeLength,
+  onEdgeLengthChange,
+  lineStyle,
+  onLineStyleChange,
   onClearCanvas,
   onUndo,
   onRedo,
@@ -75,6 +81,25 @@ export default function Sidebar({
         </div>
       </section>
 
+      {tool === "pencil2" && (
+        <section className="sidebar-section">
+          <h2 className="sidebar-heading">Line Style</h2>
+          <div className="line-style-row">
+            {LINE_STYLES.map((s) => (
+              <button
+                key={s}
+                type="button"
+                className={`line-style-btn ${lineStyle === s ? "active" : ""}`}
+                onClick={() => onLineStyleChange(s)}
+                title={s}
+              >
+                {s.charAt(0).toUpperCase() + s.slice(1)}
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
       <section className="sidebar-section">
         <h2 className="sidebar-heading">Thickness</h2>
         <div className="thickness-row">
@@ -90,6 +115,24 @@ export default function Sidebar({
           <span className="thickness-value">{thickness}px</span>
         </div>
       </section>
+
+      {tool === "pencil2" && (
+        <section className="sidebar-section">
+          <h2 className="sidebar-heading">Edge Length</h2>
+          <div className="thickness-row">
+            <input
+              type="range"
+              min={50}
+              max={150}
+              step={5}
+              value={edgeLength}
+              onChange={(e) => onEdgeLengthChange(Number(e.target.value))}
+              className="thickness-slider"
+            />
+            <span className="thickness-value">{edgeLength}px</span>
+          </div>
+        </section>
+      )}
 
       <section className="sidebar-section">
         <h2 className="sidebar-heading">Color</h2>

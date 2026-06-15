@@ -3,12 +3,24 @@ import Graph from "graphology";
 
 export default class PencilBrush2 extends PencilBrush {
   edgeLength = 70;
+  angleUnit = Math.PI / 12;
+  edgeStyle = "solid"
+
   newNodes = [];
   newEdges = [];
   prevPointWalkback = [];
   nodeStartPoint = undefined;
 
-  angleUnit = Math.PI / 12;
+  _getStrokeArray() {
+    if (this.edgeStyle === "solid") {
+      return null;
+    } else if (this.edgeStyle === "dashed") {
+      return [8, 3 + 1.5 * this.width];
+    } else if (this.edgeStyle === "dotted") {
+      return [1, 2 + 2 * this.width];
+    }
+    return null;
+  }
 
   _roundAngle(angle) {
     return Math.round(angle / this.angleUnit) * this.angleUnit;
@@ -28,6 +40,10 @@ export default class PencilBrush2 extends PencilBrush {
 
   _getMultiBondSeparator() {
     return 8 + this.width * 1.5;
+  }
+
+  _getTextBoxBaseLength() {
+    return this.edgeLength * 0.35;
   }
 
   onMouseDown(pointer, ev) {
@@ -151,6 +167,7 @@ export default class PencilBrush2 extends PencilBrush {
         const edgeObj = new Line([p1.x, p1.y, p2Corrected.x, p2Corrected.y], {
           stroke: this.color,
           strokeWidth: this.width,
+          strokeDashArray: this._getStrokeArray(),
           strokeLineCap: "round",
           selectable: false,
           evented: false,
@@ -187,7 +204,7 @@ export default class PencilBrush2 extends PencilBrush {
     const ctx = this.canvas.contextTop;
     this.canvas.clearContext(ctx);
 
-    const lastPoint = this._points.at(-1);
+    const points = this._points;
     this._points = [];
     this.oldEnd = undefined;
 
@@ -199,7 +216,7 @@ export default class PencilBrush2 extends PencilBrush {
     const endNode =
       this.newEdges.length <= 1 &&
       this.canvas._moleculeStuff.getClosestNode(
-        lastPoint,
+        points.at(-1),
         this._getNodeAttachRadius(),
       );
     const startNode = endNode && (this.nodeStartPoint ?? this.newNodes[0]);
@@ -312,6 +329,7 @@ export default class PencilBrush2 extends PencilBrush {
         stroke: new Color(this.color).setAlpha(1).toRgba(),
         strokeWidth: this.width,
         strokeLineCap: "round",
+        strokeDashArray: this._getStrokeArray(),
         selectable: false,
         evented: false,
         _custom_id: this.canvas._moleculeStuff.getNewEdgeId(),

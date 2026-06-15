@@ -27,6 +27,8 @@ export default function Whiteboard({
   tool,
   color,
   thickness,
+  edgeLength,
+  lineStyle,
   clearSignal,
   historyApiRef,
   canvasLoadData,
@@ -318,22 +320,25 @@ export default function Whiteboard({
       console.log(
         JSON.stringify(
           (() => {
-            const c = canvas.toObject([
+            const forceInclude = [
               "_moleculeStuff",
               "_history",
               "_obj_ref",
               "_custom_id",
-            ]);
+              "selectable",
+              "evented",
+            ];
+            const c = canvas.toObject(forceInclude);
             for (const op of c._history.redoStack) {
               if (op.type === "moleculePathAdd") {
                 op.object.newNodes.forEach((n) => {
-                  n._obj_data = n._obj_ref;
+                  n._obj_data = n._obj_ref.toObject(forceInclude);
                 });
                 op.object.newEdges.forEach((e) => {
-                  e._obj_data = e._obj_ref;
+                  e._obj_data = e._obj_ref.toObject(forceInclude);
                 });
               } else if (op.type === "moleculeEdgeMultiply") {
-                op.object._obj_data = op.object._obj_ref;
+                op.object._obj_data = op.object._obj_ref.toObject(forceInclude);
               }
             }
             return c;
@@ -427,7 +432,7 @@ export default function Whiteboard({
       fabricRef.current = null;
       if (historyApiRef) historyApiRef.current = null;
     };
-  }, [historyApiRef]);
+  }, []);
 
   // Apply tool / color changes to the canvas.
   useEffect(() => {
@@ -456,6 +461,10 @@ export default function Whiteboard({
                 : canvas._brushes.pencil;
       canvas.freeDrawingBrush = next;
     }
+    if (canvas._brushes?.pencil2) {
+      canvas._brushes.pencil2.edgeLength = edgeLength;
+      canvas._brushes.pencil2.edgeStyle = lineStyle;
+    }
     if (canvas.freeDrawingBrush) {
       canvas.freeDrawingBrush.color = colorRef.current;
       if (canvas.freeDrawingBrush instanceof PencilBrush2) {
@@ -465,7 +474,7 @@ export default function Whiteboard({
       }
       canvas.freeDrawingBrush.width = thickness;
     }
-  }, [tool, color, thickness]);
+  }, [tool, color, thickness, edgeLength, lineStyle]);
 
   useEffect(() => {
     if (!clearSignal) return;
@@ -549,6 +558,8 @@ export default function Whiteboard({
                 "_history",
                 "_obj_ref",
                 "_custom_id",
+                "selectable",
+                "evented",
               ]),
             ),
           );
@@ -558,7 +569,10 @@ export default function Whiteboard({
         });
       })
       .catch((ev) => {
-        if (ev.target instanceof AbortSignal && ev.target.reason.name === "AbortError") {
+        if (
+          ev.target instanceof AbortSignal &&
+          ev.target.reason.name === "AbortError"
+        ) {
           return;
         }
         throw ev;

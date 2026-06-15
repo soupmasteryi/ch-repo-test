@@ -132,6 +132,36 @@
   border-color: #1d7be3;
 }
 
+.line-style-row {
+  display: flex;
+  gap: 6px;
+}
+
+.line-style-btn {
+  flex: 1;
+  padding: 8px 10px;
+  background: #2d2d30;
+  border: 1px solid #444;
+  border-radius: 6px;
+  color: #ddd;
+  font-size: 13px;
+  cursor: pointer;
+  transition:
+    background 0.12s,
+    border-color 0.12s;
+}
+
+.line-style-btn:hover {
+  background: #37373a;
+  border-color: #1d7be3;
+}
+
+.line-style-btn.active {
+  background: #1d7be3;
+  border-color: #1d7be3;
+  color: #fff;
+}
+
 .sidebar-footer {
   margin-top: auto;
 }

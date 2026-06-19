@@ -10,6 +10,7 @@ const TOOLS = [
   { id: "circle", label: "Circle", icon: "◯" },
   { id: "circleBrush", label: "Circle Brush", icon: "⊙" },
   { id: "pencil2", label: "Pencil 2", icon: "✎" },
+  { id: "text", label: "Text", icon: "T" },
 ];
 
 const LINE_STYLES = ["solid", "dashed", "dotted"];

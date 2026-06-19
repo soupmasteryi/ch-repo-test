@@ -24,6 +24,63 @@
   flex-shrink: 0;
   background: #ffffff;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  position: relative;
+}
+
+.text-bubble {
+  position: absolute;
+  transform: translate(-12px, calc(-100% - 12px));
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  border: 1px solid #4a4a4a;
+  border-radius: 10px;
+  padding: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  z-index: 10;
+}
+
+.text-bubble::after {
+  content: "";
+  position: absolute;
+  left: 12px;
+  bottom: -8px;
+  width: 14px;
+  height: 14px;
+  background: #ffffff;
+  border-right: 1px solid #4a4a4a;
+  border-bottom: 1px solid #4a4a4a;
+  transform: rotate(45deg);
+}
+
+.text-bubble-input {
+  border: 1px solid #c4c4c4;
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  min-width: 160px;
+}
+
+.text-bubble-input:focus {
+  border-color: #4a90d9;
+}
+
+.text-bubble-enter {
+  padding: 6px 12px;
+  background: #4a90d9;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.text-bubble-enter:hover {
+  background: #3a7bc0;
 }
 
 .whiteboard canvas {

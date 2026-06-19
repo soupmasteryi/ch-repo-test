@@ -8,6 +8,7 @@ import {
   Circle,
   Color,
   Point,
+  Text,
   util,
 } from "fabric";
 import { UndirectedGraph } from "graphology";
@@ -22,6 +23,8 @@ import PencilBrush2 from "./PencilBrush2";
 
 const A4_WIDTH = 794;
 const A4_HEIGHT = 1123;
+
+const FONT_SIZE = 32;
 
 export default function Whiteboard({
   tool,
@@ -39,6 +42,16 @@ export default function Whiteboard({
   const canvasElRef = useRef(null);
   const fabricRef = useRef(null);
   const [pageHeight, setPageHeight] = useState(A4_HEIGHT);
+  const [textBubble, setTextBubble] = useState(null);
+  const [textValue, setTextValue] = useState("");
+
+  const openTextBubbleRef = useRef(null);
+  const addTextRef = useRef(null);
+  const textBubbleRef = useRef(null);
+  openTextBubbleRef.current = (info) => {
+    setTextValue("");
+    setTextBubble(info);
+  };
 
   const toolRef = useRef(tool);
   const colorRef = useRef(color);
@@ -104,7 +117,17 @@ export default function Whiteboard({
       origin = { x: p.x, y: p.y };
       const stroke = colorRef.current;
 
-      if (t === "line") {
+      if (t === "text") {
+        const node = canvas._moleculeStuff.getClosestNode(p, 20);
+        if (node) {
+          openTextBubbleRef.current?.({
+            x: node.point_coords.x,
+            y: node.point_coords.y,
+            node,
+          });
+        }
+        return;
+      } else if (t === "line") {
         shape = new Line([p.x, p.y, p.x, p.y], {
           stroke,
           strokeWidth: thicknessRef.current,
@@ -271,6 +294,7 @@ export default function Whiteboard({
     canvas.on("path:created", onPathCreated);
     canvas.on("custom:moleculePathAdd", onMoleculePathAdd);
     canvas.on("custom:moleculeEdgeMultiply", onMoleculeEdgeMultiply);
+    //canvas.on("custom:moleculeTextAdd", )
 
     const undo = () => {
       const op = canvas._history.undoStack.pop();
@@ -398,10 +422,291 @@ export default function Whiteboard({
       };
     }
 
+    addTextRef.current = (value, x, y, node) => {
+      const subscripts = [];
+      const superscripts = [];
+      let textWithoutScriptsData = "";
+      let mode = "normal";
+      for (const chr of value) {
+        const pos = textWithoutScriptsData.length;
+        if (chr === "_") {
+          if (mode !== "normal") return;
+          subscripts.push({ start: pos });
+          mode = "sub";
+        } else if (chr === "^") {
+          if (mode !== "normal") return;
+          superscripts.push({ start: pos });
+          mode = "super";
+        } else if (chr === "{") {
+          if (mode !== "sub" && mode !== "super") return;
+          mode += "Multi";
+        } else if (chr === "}") {
+          if (mode !== "subMulti" && mode !== "superMulti") return;
+          const data =
+            mode === "subMulti" ? subscripts.at(-1) : superscripts.at(-1);
+          if (data === undefined || data.start === pos) return;
+          data.end = pos;
+          mode = "normal";
+        } else {
+          textWithoutScriptsData += chr;
+          if (mode === "sub" || mode === "super") {
+            const data =
+              mode === "sub" ? subscripts.at(-1) : superscripts.at(-1);
+            data.end = data.start + 1;
+            mode = "normal";
+          }
+        }
+      }
+      if (mode !== "normal") return;
+
+      let neighborsLeft = 0,
+        neighborsRight = 0,
+        distLeft = 0,
+        distRight = 0;
+      for (const {
+        neighbor,
+        attributes,
+      } of canvas._moleculeStuff.graph.neighborEntries(node.id)) {
+        if (node.point_coords.x - attributes.point_coords.x < -0.01) {
+          neighborsRight++;
+          distRight += attributes.point_coords.x - node.point_coords.x;
+        } else if (node.point_coords.x - attributes.point_coords.x > 0.01) {
+          neighborsLeft++;
+          distLeft += node.point_coords.x - attributes.point_coords.x;
+        }
+      }
+      const avgDistanceLeft = neighborsLeft ? distLeft / neighborsLeft : 0;
+      const avgDistanceRight = neighborsRight ? distRight / neighborsRight : 0;
+
+      const attachRight =
+        avgDistanceRight - avgDistanceLeft < -0.01
+          ? false
+          : avgDistanceRight - avgDistanceLeft > 0.01
+            ? true
+            : neighborsRight < neighborsLeft;
+
+      const computeOffsetX = () => {
+        if (attachRight) {
+          let lastNormalLetter;
+          let i = textWithoutScriptsData.length,
+            subInd = subscripts.length - 1,
+            superInd = superscripts.length - 1;
+          while (i > 0) {
+            if (subscripts[subInd]?.end === i) {
+              i = subscripts[subInd].start;
+              subInd--;
+              continue;
+            } else if (superscripts[superInd]?.end === i) {
+              i = superscripts[superInd].start;
+              superInd--;
+              continue;
+            }
+            lastNormalLetter = i - 1;
+            break;
+          }
+          if (lastNormalLetter === undefined) {
+            const dummyText = textWithoutScriptsData;
+            const textObj = new Text(dummyText, {
+              left: 100,
+              top: 150,
+              originX: "left",
+              originY: "top",
+              backgroundColor: "red",
+              fill: colorRef.current,
+              fontSize: FONT_SIZE,
+              fontFamily: "sans-serif",
+            });
+            return textObj.measureLine(0).width / 2;
+          } else {
+            let includePrevLetter = false;
+            if (
+              lastNormalLetter - 1 !== subscripts[subInd]?.end - 1 &&
+              lastNormalLetter - 1 !== superscripts[superInd]?.end - 1 &&
+              lastNormalLetter - 1 >= 0 &&
+              textWithoutScriptsData[lastNormalLetter] !==
+                textWithoutScriptsData[lastNormalLetter].toUpperCase()
+            ) {
+              includePrevLetter = true;
+            }
+            const sliceStart = includePrevLetter
+              ? lastNormalLetter - 1
+              : lastNormalLetter;
+            const dummyTextWithExtra = textWithoutScriptsData.slice(
+              lastNormalLetter + 1,
+            );
+            const dummyText = textWithoutScriptsData.slice(
+              sliceStart,
+              lastNormalLetter + 1,
+            );
+            const textObjExtra = new Text(dummyTextWithExtra, {
+              left: 100,
+              top: 100,
+              originX: "left",
+              originY: "top",
+              backgroundColor: "red",
+              fill: colorRef.current,
+              fontSize: FONT_SIZE,
+              fontFamily: "sans-serif",
+            });
+            subscripts.forEach((sub) => {
+              if (sub.start - lastNormalLetter - 1 >= 0)
+                textObjExtra.setSubscript(
+                  sub.start - lastNormalLetter - 1,
+                  sub.end - lastNormalLetter - 1,
+                );
+            });
+            superscripts.forEach((sup) => {
+              if (sup.start - lastNormalLetter - 1 >= 0)
+                textObjExtra.setSuperscript(
+                  sup.start - lastNormalLetter - 1,
+                  sup.end - lastNormalLetter - 1,
+                );
+            });
+            const textObj = new Text(dummyText, {
+              left: 100,
+              top: 150,
+              originX: "left",
+              originY: "top",
+              backgroundColor: "red",
+              fill: colorRef.current,
+              fontSize: FONT_SIZE,
+              fontFamily: "sans-serif",
+            });
+
+            const sum =
+              textObjExtra.measureLine(0).width +
+              textObj.measureLine(0).width / 2;
+            return sum;
+          }
+        } else {
+          let firstNormalLetter;
+          let i = 0,
+            subInd = 0,
+            superInd = 0;
+          while (i < textWithoutScriptsData.length) {
+            if (subscripts[subInd]?.start === i) {
+              i = subscripts[subInd].end;
+              subInd++;
+              continue;
+            } else if (superscripts[superInd]?.start === i) {
+              i = superscripts[superInd].end;
+              superInd++;
+              continue;
+            }
+            firstNormalLetter = i;
+            break;
+          }
+          if (firstNormalLetter === undefined) {
+            const dummyText = textWithoutScriptsData;
+            const textObj = new Text(dummyText, {
+              left: 100,
+              top: 150,
+              originX: "left",
+              originY: "top",
+              backgroundColor: "red",
+              fill: colorRef.current,
+              fontSize: FONT_SIZE,
+              fontFamily: "sans-serif",
+            });
+            return textObj.measureLine(0).width / 2;
+          } else {
+            let includeNextLetter = false;
+            if (
+              firstNormalLetter + 1 !== subscripts[subInd]?.start &&
+              firstNormalLetter + 1 !== superscripts[superInd]?.start &&
+              firstNormalLetter + 1 < textWithoutScriptsData.length &&
+              textWithoutScriptsData[firstNormalLetter + 1] !==
+                textWithoutScriptsData[firstNormalLetter + 1].toUpperCase()
+            ) {
+              includeNextLetter = true;
+            }
+            const sliceEnd = includeNextLetter
+              ? firstNormalLetter + 2
+              : firstNormalLetter + 1;
+            const dummyTextWithExtra = textWithoutScriptsData.slice(
+              0,
+              firstNormalLetter,
+            );
+            const dummyText = textWithoutScriptsData.slice(
+              firstNormalLetter,
+              sliceEnd,
+            );
+            const textObjExtra = new Text(dummyTextWithExtra, {
+              left: 100,
+              top: 100,
+              originX: "left",
+              originY: "top",
+              backgroundColor: "red",
+              fill: colorRef.current,
+              fontSize: FONT_SIZE,
+              fontFamily: "sans-serif",
+            });
+            subscripts.forEach((sub) => {
+              if (sub.end <= dummyTextWithExtra.length)
+                textObjExtra.setSubscript(sub.start, sub.end);
+            });
+            superscripts.forEach((sup) => {
+              if (sup.end <= dummyTextWithExtra.length)
+                textObjExtra.setSuperscript(sup.start, sup.end);
+            });
+            const textObj = new Text(dummyText, {
+              left: 100,
+              top: 150,
+              originX: "left",
+              originY: "top",
+              backgroundColor: "red",
+              fill: colorRef.current,
+              fontSize: FONT_SIZE,
+              fontFamily: "sans-serif",
+            });
+
+            const sum =
+              textObjExtra.measureLine(0).width +
+              textObj.measureLine(0).width / 2;
+            return sum;
+          }
+        }
+      };
+
+      const text = new Text(textWithoutScriptsData, {
+        left: x,
+        top: y,
+        fill: colorRef.current,
+        fontSize: FONT_SIZE,
+        fontFamily: "sans-serif",
+        originX: "left",
+        originY: "top",
+        selectable: false,
+        evented: false,
+      });
+
+      subscripts.forEach((sub) => text.setSubscript(sub.start, sub.end));
+      superscripts.forEach((sup) => text.setSuperscript(sup.start, sup.end));
+
+      const offsetX = attachRight
+        ? text.measureLine(0).width - computeOffsetX()
+        : computeOffsetX();
+      const offsetY = text.fontSize / 2;
+
+      text.top = y - offsetY;
+      text.left = x - offsetX;
+
+      const nodeBkgCover = new Circle({
+        left: x,
+        top: y,
+        radius: FONT_SIZE / 2,
+        fill: canvas.backgroundColor,
+        selectable: false,
+        evented: false,
+      })
+      canvas.add(nodeBkgCover, text);
+      canvas.renderAll();
+    };
+
     const onKeyDown = (e) => {
       const key = e.key.toLowerCase();
-      const isUndo = key === "z" && !e.shiftKey;
-      const isRedo = (key === "z" && e.shiftKey) || key === "y";
+      const isUndo = e.ctrlKey && key === "z" && !e.shiftKey;
+      const isRedo = e.ctrlKey && ((key === "z" && e.shiftKey) || key === "y");
 
       if (!(isUndo || isRedo)) return;
 
@@ -585,11 +890,48 @@ export default function Whiteboard({
     };
   }, [canvasLoadData]);
 
+  const handleTextEnter = () => {
+    if (!textBubble) return;
+    const value = textValue.trim();
+    if (value) {
+      addTextRef.current?.(value, textBubble.x, textBubble.y, textBubble.node);
+    }
+    setTextBubble(null);
+    setTextValue("");
+  };
+
   return (
     <div className="whiteboard" ref={containerRef}>
       <div className="whiteboard-stack">
         <div className="whiteboard-page" style={{ height: pageHeight }}>
           <canvas ref={canvasElRef} />
+          {textBubble && (
+            <div
+              ref={textBubbleRef}
+              className="text-bubble"
+              style={{ left: textBubble.x, top: textBubble.y }}
+            >
+              <input
+                type="text"
+                className="text-bubble-input"
+                value={textValue}
+                autoFocus={true}
+                placeholder="Type text…"
+                onChange={(e) => setTextValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleTextEnter();
+                  else if (e.key === "Escape") setTextBubble(null);
+                }}
+              />
+              <button
+                type="button"
+                className="text-bubble-enter"
+                onClick={handleTextEnter}
+              >
+                enter
+              </button>
+            </div>
+          )}
         </div>
         <button
           type="button"

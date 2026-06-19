@@ -39,7 +39,7 @@ export default class PencilBrush2 extends PencilBrush {
   }
 
   _getMultiBondSeparator() {
-    return 8 + this.width * 1.5;
+    return 4 + this.width * 1.5;
   }
 
   _getTextBoxBaseLength() {

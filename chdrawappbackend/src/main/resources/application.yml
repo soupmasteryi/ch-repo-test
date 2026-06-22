@@ -1,0 +1,34 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: chdrawappbackend
+  datasource:
+    url: jdbc:postgresql://localhost:5432/drawapp
+    username: postgres
+    password: badpassword
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: false
+    open-in-view: false
+  servlet:
+    multipart:
+      max-file-size: 25MB
+      max-request-size: 50MB
+
+# Application-specific configuration
+app:
+  jwt:
+    # Base64-encoded HMAC-SHA256 secret. Override via APP_JWT_SECRET in production.
+    secret: ${APP_JWT_SECRET:Y2hkcmF3YXBwLXN1cGVyLXNlY3JldC1rZXktY2hhbmdlLW1lLWluLXByb2R1Y3Rpb24tMTIzNDU2}
+    # Access token lifetime in milliseconds (24h)
+    expiration-ms: 86400000
+
+logging:
+  level:
+    org.example.drawapp: INFO

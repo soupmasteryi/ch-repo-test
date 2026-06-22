@@ -1,0 +1,4 @@
+# Local build tooling and MITM-proxy truststore (machine-specific, not committed)
+.tools/
+truststore.jks
+avast-root.cer

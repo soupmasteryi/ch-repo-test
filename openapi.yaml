@@ -1,0 +1,389 @@
+openapi: 3.0.3
+info:
+  title: Whiteboard App API
+  description: API for user authentication and whiteboard management.
+  version: 1.0.0
+
+servers:
+  - url: /api/v1
+
+tags:
+  - name: Auth
+    description: Authentication endpoints
+  - name: Whiteboards
+    description: Whiteboard management endpoints
+
+paths:
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a new user with email and password
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Credentials'
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Log in with email and password
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Credentials'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          description: Invalid email or password
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Log out the current session
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Logout successful
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /users/{userId}/whiteboards:
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        description: The id of the user that owns the whiteboards
+        schema:
+          type: string
+    get:
+      tags: [Whiteboards]
+      summary: List all whiteboards for the given user
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: A list of whiteboards
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Whiteboard'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      tags: [Whiteboards]
+      summary: Create a new whiteboard
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [whiteboardData, preview, canvas]
+              properties:
+                whiteboardData:
+                  type: object
+                  required: [createdAt]
+                  properties:
+                    createdAt:
+                      type: string
+                      format: date-time
+                preview:
+                  type: string
+                  format: binary
+                  description: Preview thumbnail image
+                canvas:
+                  type: string
+                  format: binary
+                  description: Canvas content as a binary string
+            encoding:
+              whiteboardData:
+                contentType: application/json
+              preview:
+                contentType: image/png
+              canvas:
+                contentType: application/octet-stream
+      responses:
+        '201':
+          description: Whiteboard created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Whiteboard'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /users/{userId}/whiteboards/{id}:
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        description: The id of the user that owns the whiteboard
+        schema:
+          type: string
+      - name: id
+        in: path
+        required: true
+        description: The whiteboard id
+        schema:
+          type: string
+    get:
+      tags: [Whiteboards]
+      summary: Get a whiteboard by id
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The requested whiteboard
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Whiteboard'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [Whiteboards]
+      summary: Delete a whiteboard by id
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Whiteboard deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /users/{userId}/whiteboards/{id}/preview:
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        description: The id of the user that owns the whiteboard
+        schema:
+          type: string
+      - name: id
+        in: path
+        required: true
+        description: The whiteboard id
+        schema:
+          type: string
+    get:
+      tags: [Whiteboards]
+      summary: Get the preview thumbnail of a whiteboard
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The whiteboard preview thumbnail
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags: [Whiteboards]
+      summary: Update the preview thumbnail of a whiteboard
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          image/png:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '200':
+          description: The updated preview thumbnail
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /users/{userId}/whiteboards/{id}/canvas:
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        description: The id of the user that owns the whiteboard
+        schema:
+          type: string
+      - name: id
+        in: path
+        required: true
+        description: The whiteboard id
+        schema:
+          type: string
+    get:
+      tags: [Whiteboards]
+      summary: Get the canvas content of a whiteboard
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The whiteboard canvas content
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags: [Whiteboards]
+      summary: Update the canvas content of a whiteboard
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '200':
+          description: The updated canvas content
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    BadRequest:
+      description: The request was malformed or invalid
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication is required or has failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: The requested resource was not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  schemas:
+    Credentials:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+          minLength: 8
+
+    AuthResponse:
+      type: object
+      properties:
+        tokenId:
+          type: string
+          description: Identifier for the issued session token
+        accessToken:
+          type: string
+          description: Bearer token to use for authorized requests
+        user:
+          $ref: '#/components/schemas/User'
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+          format: email
+
+    Whiteboard:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        previewUrl:
+          type: string
+        canvasUrl:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string

@@ -25,17 +25,16 @@ public class JwtService {
         this.expirationMs = expirationMs;
     }
 
-    /** A freshly issued token together with its jti, so callers can persist/return the jti. */
-    public record IssuedToken(String token, String jti) {
+    public record IssuedToken(String token, UUID jti) {
     }
 
     public IssuedToken issue(User user) {
-        String jti = UUID.randomUUID().toString();
+        UUID jti = UUID.randomUUID();
         Date now = new Date();
         Date exp = new Date(now.getTime() + expirationMs);
 
         String token = Jwts.builder()
-                .id(jti)
+                .id(jti.toString())
                 .subject(user.getId().toString())
                 .claim("email", user.getEmail())
                 .issuedAt(now)
@@ -46,11 +45,6 @@ public class JwtService {
         return new IssuedToken(token, jti);
     }
 
-    /**
-     * Parses and validates the token's signature and expiry.
-     *
-     * @throws io.jsonwebtoken.JwtException if the token is invalid or expired
-     */
     public Claims parse(String token) {
         return Jwts.parser()
                 .verifyWith(key)

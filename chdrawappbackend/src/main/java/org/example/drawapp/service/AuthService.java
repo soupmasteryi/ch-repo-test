@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.UUID;
 
 @Service
 public class AuthService {
@@ -69,8 +70,14 @@ public class AuthService {
             // Already invalid/expired — nothing to revoke.
             return;
         }
-        String jti = claims.getId();
-        if (jti != null && !blacklistRepository.existsByJti(jti)) {
+        UUID jti;
+        try {
+            jti = UUID.fromString(claims.getId());
+        } catch (IllegalArgumentException | NullPointerException ex) {
+            // Malformed jti — nothing to revoke.
+            return;
+        }
+        if (!blacklistRepository.existsByJti(jti)) {
             Instant expiresAt = claims.getExpiration() != null
                     ? claims.getExpiration().toInstant()
                     : Instant.now();
@@ -80,6 +87,6 @@ public class AuthService {
 
     private AuthResponse issueFor(User user) {
         JwtService.IssuedToken issued = jwtService.issue(user);
-        return new AuthResponse(issued.jti(), issued.token(), UserDto.from(user));
+        return new AuthResponse(issued.jti().toString(), issued.token(), UserDto.from(user));
     }
 }

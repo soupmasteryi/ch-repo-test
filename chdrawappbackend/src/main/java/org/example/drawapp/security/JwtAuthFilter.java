@@ -15,10 +15,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.UUID;
 
-/**
- * Validates the bearer JWT on protected requests, rejects blacklisted (logged-out)
- * tokens, and attaches an {@link AuthPrincipal} to the request on success.
- */
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
@@ -58,8 +54,14 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             return;
         }
 
-        String jti = claims.getId();
-        if (jti == null || blacklistRepository.existsByJti(jti)) {
+        UUID jti;
+        try {
+            jti = UUID.fromString(claims.getId());
+        } catch (IllegalArgumentException | NullPointerException ex) {
+            writeUnauthorized(response, "Invalid or expired token");
+            return;
+        }
+        if (blacklistRepository.existsByJti(jti)) {
             writeUnauthorized(response, "Token has been revoked");
             return;
         }

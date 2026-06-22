@@ -1,11 +1,9 @@
 package org.example.drawapp.exception;
 
+import lombok.Getter;
 import org.springframework.http.HttpStatus;
 
-/**
- * Domain-level exception carrying the HTTP status and machine-readable error code
- * that should be returned to the client.
- */
+@Getter
 public class ApiException extends RuntimeException {
 
     private final HttpStatus status;
@@ -15,14 +13,6 @@ public class ApiException extends RuntimeException {
         super(message);
         this.status = status;
         this.error = error;
-    }
-
-    public HttpStatus getStatus() {
-        return status;
-    }
-
-    public String getError() {
-        return error;
     }
 
     public static ApiException badRequest(String message) {

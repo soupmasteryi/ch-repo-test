@@ -3,7 +3,9 @@ package org.example.drawapp.repository;
 import org.example.drawapp.model.BlacklistedToken;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface BlacklistedTokenRepository extends JpaRepository<BlacklistedToken, String> {
+import java.util.UUID;
 
-    boolean existsByJti(String jti);
+public interface BlacklistedTokenRepository extends JpaRepository<BlacklistedToken, UUID> {
+
+    boolean existsByJti(UUID jti);
 }

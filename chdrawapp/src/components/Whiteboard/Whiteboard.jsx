@@ -59,6 +59,21 @@ export default function Whiteboard({
   const isMouseDown = useRef(false);
   const isRestoringRef = useRef(false);
 
+  const pushHistory = (op) => {
+    if (isRestoringRef.current) return;
+
+    const canvas = fabricRef.current;
+    if (!canvas) return;
+    canvas._history.undoStack.push(op);
+    canvas._history.redoStack = [];
+
+    try {
+      localStorage.setItem("canvasLoadData", serializeCanvas(canvas));
+    } catch (ex) {
+      console.log(ex);
+    }
+  };
+
   useEffect(() => {
     const canvas = new Canvas(canvasElRef.current, {
       backgroundColor: "#ffffff",
@@ -71,10 +86,54 @@ export default function Whiteboard({
     };
 
     canvas._moleculeStuff = new MoleculeStuff();
-
     canvas.setDimensions({ width: A4_WIDTH, height: A4_HEIGHT });
-
     canvas.renderAll();
+
+    const serializeCanvas = (canvas) => {
+      return JSON.stringify(
+        (() => {
+          const forceInclude = [
+            "_moleculeStuff",
+            "_history",
+            "_obj_ref",
+            "_custom_id",
+            "selectable",
+            "evented",
+            "width",
+            "height",
+          ];
+          const c = canvas.toObject(forceInclude);
+          for (const op of c._history.redoStack) {
+            if (op.type === "addBasic") {
+              op.object._obj_data = op.object._obj_ref.toObject(forceInclude);
+            } else if (op.type === "moleculePathAdd") {
+              op.object.newNodes.forEach((n) => {
+                n._obj_data = n._obj_ref.toObject(forceInclude);
+              });
+              op.object.newEdges.forEach((e) => {
+                e._obj_data = e._obj_ref.toObject(forceInclude);
+              });
+            } else if (op.type === "moleculeEdgeMultiply") {
+              op.object._obj_data = op.object._obj_ref.toObject(forceInclude);
+            } else if (op.type === "moleculeTextAdd") {
+              op.object.text._obj_data =
+                op.object.text._obj_ref.toObject(forceInclude);
+              op.object.textBkg._obj_data =
+                op.object.textBkg._obj_ref.toObject(forceInclude);
+            }
+          }
+          return c;
+        })(),
+        function (k, v) {
+          if (k === "_obj_ref") return null;
+          else if (k === "_obj_data") {
+            this._obj_data = undefined;
+            return v;
+          }
+          return v;
+        },
+      );
+    };
     fabricRef.current = canvas;
 
     const pencilBrush = makeMouseSafeBrush(new PencilBrush(canvas));
@@ -89,12 +148,6 @@ export default function Whiteboard({
       curvedArrow: curvedArrowBrush,
       circleBrush: circleBrush,
       pencil2: pencil2Brush,
-    };
-
-    const pushHistory = (op) => {
-      if (isRestoringRef.current) return;
-      canvas._history.undoStack.push(op);
-      canvas._history.redoStack = [];
     };
 
     let shape = null;
@@ -119,7 +172,7 @@ export default function Whiteboard({
 
       if (t === "text") {
         const node = canvas._moleculeStuff.getClosestNode(p, 20);
-        if (node) {
+        if (node && !node.text) {
           openTextBubbleRef.current?.({
             x: node.point_coords.x,
             y: node.point_coords.y,
@@ -138,6 +191,8 @@ export default function Whiteboard({
         shape = new Rect({
           left: p.x,
           top: p.y,
+          originX: "left",
+          originY: "top",
           width: 0,
           height: 0,
           fill: "transparent",
@@ -152,6 +207,8 @@ export default function Whiteboard({
           top: p.y,
           rx: 0,
           ry: 0,
+          originX: "left",
+          originY: "top",
           fill: "transparent",
           stroke,
           strokeWidth: thicknessRef.current,
@@ -193,15 +250,32 @@ export default function Whiteboard({
       if (!isMouseDown.current) return;
       isMouseDown.current = false;
       if (shape) {
-        pushHistory({ type: "addBasic", object: shape });
+        shape.set({ _custom_id: canvas._moleculeStuff.generateId() });
+        pushHistory({
+          type: "addBasic",
+          object: {
+            id: shape._custom_id,
+            _obj_ref: shape,
+          },
+        });
       }
       shape = null;
       origin = null;
     };
 
     const onPathCreated = (ev) => {
-      ev.path.set({ selectable: false, evented: false });
-      pushHistory({ type: "addBasic", object: ev.path });
+      ev.path.set({
+        selectable: false,
+        evented: false,
+        _custom_id: canvas._moleculeStuff.generateId(),
+      });
+      pushHistory({
+        type: "addBasic",
+        object: {
+          id: ev.path._custom_id,
+          _obj_ref: ev.path,
+        },
+      });
     };
 
     const onMoleculePathAdd = (ev) => {
@@ -222,7 +296,7 @@ export default function Whiteboard({
           }
         }
         node._obj_ref.set({ fill: "transparent" });
-        canvas._moleculeStuff.graph.addNode(node.id, node);
+        canvas._moleculeStuff.graph.addNode(node.id, { ...node });
       }
       let lastEdgeIndex = undefined;
       for (const [ind, edge] of ev.newEdges.entries()) {
@@ -288,20 +362,33 @@ export default function Whiteboard({
       pushHistory({ type: "moleculeEdgeMultiply", object: ev });
     };
 
+    const onMoleculeTextAdd = (ev) => {
+      pushHistory({ type: "moleculeTextAdd", object: ev });
+    };
+
     canvas.on("mouse:down", onMouseDown);
     canvas.on("mouse:move", onMouseMove);
     canvas.on("mouse:up", onMouseUp);
     canvas.on("path:created", onPathCreated);
     canvas.on("custom:moleculePathAdd", onMoleculePathAdd);
     canvas.on("custom:moleculeEdgeMultiply", onMoleculeEdgeMultiply);
-    //canvas.on("custom:moleculeTextAdd", )
+    canvas.on("custom:moleculeTextAdd", onMoleculeTextAdd);
 
     const undo = () => {
       const op = canvas._history.undoStack.pop();
       if (!op) return;
       isRestoringRef.current = true;
       if (op.type === "addBasic") {
-        canvas.remove(op.object);
+        canvas.remove(
+          op.object._obj_ref ??
+            (op.object._obj_ref = canvas
+              .getObjects()
+              .find((o) => o._custom_id === op.object.id)),
+        );
+      } else if (op.type === "extend") {
+        const oldHeight = op.object.height - A4_HEIGHT;
+        canvas.setDimensions({ width: op.object.width, height: oldHeight });
+        setPageHeight(oldHeight);
       } else if (op.type === "moleculePathAdd") {
         op.object.newEdges.forEach((e) => {
           canvas._moleculeStuff.graph.dropEdge(e.id);
@@ -338,39 +425,32 @@ export default function Whiteboard({
               .getObjects("Line")
               .find((o) => o._custom_id === edge.id)),
         );
+      } else if (op.type === "moleculeTextAdd") {
+        const { text, textBkg } = op.object;
+        canvas._moleculeStuff.graph.mergeNode(op.object.nodeId, {
+          text: undefined,
+          textBkg: undefined,
+        });
+        canvas.remove(
+          text._obj_ref ??
+            (text._obj_ref = canvas
+              .getObjects("Text")
+              .find((o) => o._custom_id === text.id)),
+          textBkg._obj_ref ??
+            (textBkg._obj_ref = canvas
+              .getObjects("Circle")
+              .find((o) => o._custom_id === textBkg.id)),
+        );
       }
       canvas._history.redoStack.push(op);
 
-      console.log(
-        JSON.stringify(
-          (() => {
-            const forceInclude = [
-              "_moleculeStuff",
-              "_history",
-              "_obj_ref",
-              "_custom_id",
-              "selectable",
-              "evented",
-            ];
-            const c = canvas.toObject(forceInclude);
-            for (const op of c._history.redoStack) {
-              if (op.type === "moleculePathAdd") {
-                op.object.newNodes.forEach((n) => {
-                  n._obj_data = n._obj_ref.toObject(forceInclude);
-                });
-                op.object.newEdges.forEach((e) => {
-                  e._obj_data = e._obj_ref.toObject(forceInclude);
-                });
-              } else if (op.type === "moleculeEdgeMultiply") {
-                op.object._obj_data = op.object._obj_ref.toObject(forceInclude);
-              }
-            }
-            return c;
-          })(),
-          (k, v) => (k === "_obj_ref" ? null : v),
-        ),
-      );
       canvas.renderAll();
+
+      try {
+        localStorage.setItem("canvasLoadData", serializeCanvas(canvas));
+      } catch (ex) {
+        console.log(ex);
+      }
       isRestoringRef.current = false;
     };
 
@@ -379,10 +459,16 @@ export default function Whiteboard({
       if (!op) return;
       isRestoringRef.current = true;
       if (op.type === "addBasic") {
-        canvas.add(op.object);
+        canvas.add(op.object._obj_ref);
+      } else if (op.type === "extend") {
+        canvas.setDimensions({
+          width: op.object.width,
+          height: op.object.height,
+        });
+        setPageHeight(op.object.height);
       } else if (op.type === "moleculePathAdd") {
         op.object.newNodes.forEach((n) => {
-          canvas._moleculeStuff.graph.addNode(n.id, n);
+          canvas._moleculeStuff.graph.addNode(n.id, { ...n });
           canvas.add(n._obj_ref);
         });
         op.object.newEdges.forEach((e) => {
@@ -403,15 +489,35 @@ export default function Whiteboard({
           graphEdge.nodes[1].id,
           {
             [edge.slot]: {
-              id: edge._obj_ref._custom_id,
+              id: edge.id,
               _obj_ref: edge._obj_ref,
             },
           },
         );
         canvas.add(edge._obj_ref);
+      } else if (op.type === "moleculeTextAdd") {
+        const { text, textBkg } = op.object;
+        canvas._moleculeStuff.graph.mergeNode(op.object.nodeId, {
+          text: {
+            id: text.id,
+            _obj_ref: text._obj_ref,
+          },
+          textBkg: {
+            id: textBkg.id,
+            _obj_ref: textBkg._obj_ref,
+          },
+        });
+        canvas.add(textBkg._obj_ref, text._obj_ref);
       }
       canvas._history.undoStack.push(op);
+
       canvas.renderAll();
+
+      try {
+        localStorage.setItem("canvasLoadData", serializeCanvas(canvas));
+      } catch (ex) {
+        console.log(ex);
+      }
       isRestoringRef.current = false;
     };
 
@@ -485,7 +591,7 @@ export default function Whiteboard({
             ? true
             : neighborsRight < neighborsLeft;
 
-      const computeOffsetX = () => {
+      const computeSideOffset = () => {
         if (attachRight) {
           let lastNormalLetter;
           let i = textWithoutScriptsData.length,
@@ -505,18 +611,7 @@ export default function Whiteboard({
             break;
           }
           if (lastNormalLetter === undefined) {
-            const dummyText = textWithoutScriptsData;
-            const textObj = new Text(dummyText, {
-              left: 100,
-              top: 150,
-              originX: "left",
-              originY: "top",
-              backgroundColor: "red",
-              fill: colorRef.current,
-              fontSize: FONT_SIZE,
-              fontFamily: "sans-serif",
-            });
-            return textObj.measureLine(0).width / 2;
+            return undefined;
           } else {
             let includePrevLetter = false;
             if (
@@ -597,18 +692,7 @@ export default function Whiteboard({
             break;
           }
           if (firstNormalLetter === undefined) {
-            const dummyText = textWithoutScriptsData;
-            const textObj = new Text(dummyText, {
-              left: 100,
-              top: 150,
-              originX: "left",
-              originY: "top",
-              backgroundColor: "red",
-              fill: colorRef.current,
-              fontSize: FONT_SIZE,
-              fontFamily: "sans-serif",
-            });
-            return textObj.measureLine(0).width / 2;
+            return undefined;
           } else {
             let includeNextLetter = false;
             if (
@@ -669,6 +753,7 @@ export default function Whiteboard({
       };
 
       const text = new Text(textWithoutScriptsData, {
+        _custom_id: canvas._moleculeStuff.generateId(),
         left: x,
         top: y,
         fill: colorRef.current,
@@ -683,24 +768,51 @@ export default function Whiteboard({
       subscripts.forEach((sub) => text.setSubscript(sub.start, sub.end));
       superscripts.forEach((sup) => text.setSuperscript(sup.start, sup.end));
 
-      const offsetX = attachRight
-        ? text.measureLine(0).width - computeOffsetX()
-        : computeOffsetX();
+      const sideOffset = computeSideOffset();
+      const offsetX =
+        sideOffset === undefined
+          ? text.measureLine(0).width / 2
+          : attachRight
+            ? text.measureLine(0).width - sideOffset
+            : sideOffset;
       const offsetY = text.fontSize / 2;
 
       text.top = y - offsetY;
       text.left = x - offsetX;
 
       const nodeBkgCover = new Circle({
+        _custom_id: canvas._moleculeStuff.generateId(),
         left: x,
         top: y,
         radius: FONT_SIZE / 2,
         fill: canvas.backgroundColor,
         selectable: false,
         evented: false,
-      })
+      });
+
+      canvas._moleculeStuff.graph.mergeNode(node.id, {
+        text: {
+          id: text._custom_id,
+          _obj_ref: text,
+        },
+        textBkg: {
+          id: nodeBkgCover._custom_id,
+          _obj_ref: nodeBkgCover,
+        },
+      });
       canvas.add(nodeBkgCover, text);
       canvas.renderAll();
+      canvas.fire("custom:moleculeTextAdd", {
+        nodeId: node.id,
+        text: {
+          id: text._custom_id,
+          _obj_ref: text,
+        },
+        textBkg: {
+          id: nodeBkgCover._custom_id,
+          _obj_ref: nodeBkgCover,
+        },
+      });
     };
 
     const onKeyDown = (e) => {
@@ -789,8 +901,9 @@ export default function Whiteboard({
     canvas.backgroundColor = "#ffffff";
     canvas.setDimensions({ width: A4_WIDTH, height: A4_HEIGHT });
     canvas.renderAll();
-    undoStackRef.current = [];
-    redoStackRef.current = [];
+    canvas._history.undoStack = [];
+    canvas._history.redoStack = [];
+    localStorage.removeItem("canvasLoadData");
     setPageHeight(A4_HEIGHT);
   }, [clearSignal]);
 
@@ -801,11 +914,18 @@ export default function Whiteboard({
     canvas.setDimensions({ width: A4_WIDTH, height: newHeight });
     canvas.renderAll();
     setPageHeight(newHeight);
+
+    pushHistory({
+      type: "extend",
+      object: { width: A4_WIDTH, height: newHeight },
+    });
   };
 
   useEffect(() => {
     if (!canvasLoadData || !fabricRef.current) {
-      return;
+      return () => {
+        setIsLoading(false);
+      };
     }
     const canvas = fabricRef.current;
     const abortController = new AbortController();
@@ -832,11 +952,19 @@ export default function Whiteboard({
       .then((cnv) => {
         const promises = [];
         for (const op of cnv._history.redoStack) {
-          if (op.type === "moleculePathAdd") {
+          if (op.type === "addBasic") {
+            promises.push(
+              util.enlivenObjects([op.object._obj_data]).then(([obj_data]) => {
+                op.object._obj_ref = obj_data;
+                op.object._obj_data = undefined;
+              }),
+            );
+          } else if (op.type === "moleculePathAdd") {
             op.object.newNodes.forEach((n) => {
               promises.push(
                 util.enlivenObjects([n._obj_data]).then(([obj_data]) => {
                   n._obj_ref = obj_data;
+                  n._obj_data = undefined;
                 }),
               );
             });
@@ -844,6 +972,7 @@ export default function Whiteboard({
               promises.push(
                 util.enlivenObjects([e._obj_data]).then(([obj_data]) => {
                   e._obj_ref = obj_data;
+                  e._obj_data = undefined;
                 }),
               );
             });
@@ -851,23 +980,28 @@ export default function Whiteboard({
             promises.push(
               util.enlivenObjects([op.object._obj_data]).then(([obj_data]) => {
                 op.object._obj_ref = obj_data;
+                op.object._obj_data = undefined;
               }),
+            );
+          } else if (op.type === "moleculeTextAdd") {
+            promises.push(
+              util
+                .enlivenObjects([
+                  op.object.text._obj_data,
+                  op.object.textBkg._obj_data,
+                ])
+                .then(([text_obj_data, bkg_obj_data]) => {
+                  op.object.text._obj_ref = text_obj_data;
+                  op.object.textBkg._obj_ref = bkg_obj_data;
+                  op.object.text._obj_data = undefined;
+                  op.object.textBkg._obj_data = undefined;
+                }),
             );
           }
         }
         Promise.all(promises).then(() => {
-          console.log(
-            JSON.stringify(
-              cnv.toObject([
-                "_moleculeStuff",
-                "_history",
-                "_obj_ref",
-                "_custom_id",
-                "selectable",
-                "evented",
-              ]),
-            ),
-          );
+          cnv.setDimensions({ width: cnv.width, height: cnv.height });
+          setPageHeight(cnv.height);
           cnv.renderAll();
           setCanvasLoadData(null);
           setIsLoading(false);

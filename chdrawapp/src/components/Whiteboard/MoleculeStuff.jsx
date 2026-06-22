@@ -2,18 +2,21 @@ import { Color } from "fabric";
 import { UndirectedGraph } from "graphology";
 
 export default class MoleculeStuff {
-  nodeLabelId = 0;
-  edgeLabelId = 0;
+  idCounter = 0;
   graph = new UndirectedGraph({ allowSelfLoops: false });
   constructor(props) {
     for (const key in props) this[key] = props[key];
   }
+  generateId() {
+    return "" + this.idCounter++;
+  }
   getNewNodeId() {
-    return "" + this.nodeLabelId++;
+    return this.generateId();
   }
   getNewEdgeId() {
-    return "" + this.edgeLabelId++;
+    return this.generateId();
   }
+
   getNodeFill(bkgColor) {
     const color = new Color(bkgColor);
     color.getSource()[0] = 255 - color.getSource()[0];

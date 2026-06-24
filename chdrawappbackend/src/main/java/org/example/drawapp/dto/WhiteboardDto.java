@@ -14,9 +14,10 @@ public record WhiteboardDto(
 
     public static WhiteboardDto from(Whiteboard wb) {
         String userId = wb.getUser().getId().toString();
-        String base = "/api/v1/users/" + userId + "/whiteboards/" + wb.getId();
+        String code = getCodeFromId(wb.getId());
+        String base = "/users/" + userId + "/whiteboards/" + code;
         return new WhiteboardDto(
-                getCodeFromId(wb.getId()),
+                code,
                 userId,
                 base + "/preview",
                 base + "/canvas",

@@ -1,13 +1,10 @@
 import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import "./Login.css";
 import { login } from "../../api/auth";
 
-function navigateTo(path) {
-  window.history.pushState({}, "", path);
-  window.dispatchEvent(new PopStateEvent("popstate"));
-}
-
 export default function Login() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -16,9 +13,9 @@ export default function Login() {
   // If already logged in, go straight to the home page.
   useEffect(() => {
     if (localStorage.getItem("token")) {
-      navigateTo("/");
+      navigate("/", { replace: true });
     }
-  }, []);
+  }, [navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -29,7 +26,7 @@ export default function Login() {
       const { accessToken, user } = await login({ email, password });
       localStorage.setItem("token", accessToken);
       if (user?.id) localStorage.setItem("userId", user.id);
-      navigateTo("/");
+      navigate("/");
     } catch (err) {
       setError(err.message);
     } finally {
@@ -64,7 +61,7 @@ export default function Login() {
           {submitting ? "Logging in…" : "Login"}
         </button>
         <p className="login-footer">
-          Don't have an account? <a href="/register">Register</a>
+          Don't have an account? <Link to="/register">Register</Link>
         </p>
       </form>
     </div>

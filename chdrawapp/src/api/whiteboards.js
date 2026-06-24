@@ -1,10 +1,5 @@
 import { API_BASE_URL } from "./config";
 
-// A 1x1 transparent PNG, used as a placeholder preview until real thumbnail
-// generation is wired up.
-const PLACEHOLDER_PNG_BASE64 =
-  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
-
 function placeholderPreviewBlob() {
   const binary = atob(PLACEHOLDER_PNG_BASE64);
   const bytes = new Uint8Array(binary.length);
@@ -106,6 +101,69 @@ export async function updateWhiteboard({ token, userId, code, canvasData }) {
   }
 
   return data;
+}
+
+export async function listWhiteboards({ token, userId }) {
+  let res;
+  try {
+    res = await fetch(`${API_BASE_URL}/users/${userId}/whiteboards`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  } catch {
+    throw new Error("Unable to reach the server. Please try again.");
+  }
+
+  let data = null;
+  try {
+    data = await res.json();
+  } catch {
+  }
+
+  if (!res.ok) {
+    throw new Error(
+      data?.message || "Could not load your whiteboards. Please try again.",
+    );
+  }
+
+  return Array.isArray(data) ? data : data?.whiteboards ?? [];
+}
+
+export async function deleteWhiteboard({ token, userId, id }) {
+  let res;
+  try {
+    res = await fetch(`${API_BASE_URL}/users/${userId}/whiteboards/${id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  } catch {
+    throw new Error("Unable to reach the server. Please try again.");
+  }
+
+  if (!res.ok) {
+    let data = null;
+    try {
+      data = await res.json();
+    } catch {
+    }
+    throw new Error(
+      data?.message || "Could not delete the whiteboard. Please try again.",
+    );
+  }
+}
+
+export async function fetchPreview({ token, previewUrl }) {
+  const url = `${API_BASE_URL}${previewUrl.startsWith("/") ? "" : "/"}${previewUrl}`;
+  console.log(url);
+
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    throw new Error("Could not load preview.");
+  }
+  const blob = await res.blob();
+  return URL.createObjectURL(blob);
 }
 
 export async function getWhiteboard({ token, userId, code }) {

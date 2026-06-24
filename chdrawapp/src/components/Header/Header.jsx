@@ -1,14 +1,10 @@
 import { useEffect, useRef, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import "./Header.css";
-import { logout } from "../../api/auth";
-
-function navigateTo(path) {
-  window.history.pushState({}, "", path);
-  window.dispatchEvent(new PopStateEvent("popstate"));
-}
 
 export default function Header({ onLoadClick, onSaveClick }) {
-  const [token, setToken] = useState(() => localStorage.getItem("token"));
+  const navigate = useNavigate();
+  const token = localStorage.getItem("token");
   const [menuOpen, setMenuOpen] = useState(false);
   const accountRef = useRef(null);
 
@@ -23,22 +19,15 @@ export default function Header({ onLoadClick, onSaveClick }) {
     return () => document.removeEventListener("mousedown", onClick);
   }, [menuOpen]);
 
-  const handleLogout = async () => {
+  const handleLogout = () => {
     setMenuOpen(false);
-    const current = localStorage.getItem("token");
-    localStorage.removeItem("token");
-    localStorage.removeItem("userId");
-    localStorage.removeItem("canvasLoadData");
-    localStorage.removeItem("whiteboardCode");
-    setToken(null);
-    if (current) await logout(current);
-    window.location.reload();
+    navigate("/logout");
   };
 
   return (
     <header className="header">
       <div className="header-left">
-        <a href="/" className="header-home">Home</a>
+        <Link to="/" className="header-home">Home</Link>
         <button type="button" className="header-load" onClick={onLoadClick}>
           load
         </button>
@@ -66,7 +55,10 @@ export default function Header({ onLoadClick, onSaveClick }) {
               <button
                 type="button"
                 className="header-menu-item"
-                onClick={() => setMenuOpen(false)}
+                onClick={() => {
+                  setMenuOpen(false);
+                  navigate("/dashboard");
+                }}
               >
                 Dashboard
               </button>
@@ -84,7 +76,7 @@ export default function Header({ onLoadClick, onSaveClick }) {
         <button
           type="button"
           className="header-login"
-          onClick={() => navigateTo("/login")}
+          onClick={() => navigate("/login")}
         >
           Login
         </button>

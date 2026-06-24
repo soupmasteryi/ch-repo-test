@@ -1,13 +1,10 @@
 import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import "./Register.css";
 import { register } from "../../api/auth";
 
-function navigateTo(path) {
-  window.history.pushState({}, "", path);
-  window.dispatchEvent(new PopStateEvent("popstate"));
-}
-
 export default function Register() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -19,9 +16,9 @@ export default function Register() {
   // If already logged in, go straight to the home page.
   useEffect(() => {
     if (localStorage.getItem("token")) {
-      navigateTo("/");
+      navigate("/", { replace: true });
     }
-  }, []);
+  }, [navigate]);
 
   const handleEmailBlur = () => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -48,7 +45,7 @@ export default function Register() {
       const { accessToken, user } = await register({ email, password });
       localStorage.setItem("token", accessToken);
       if (user?.id) localStorage.setItem("userId", user.id);
-      navigateTo("/");
+      navigate("/");
     } catch (err) {
       setError(err.message);
     } finally {
@@ -112,7 +109,7 @@ export default function Register() {
           {submitting ? "Registering…" : "Register"}
         </button>
         <p className="register-footer">
-          Already have an account? <a href="/login">Login</a>
+          Already have an account? <Link to="/login">Login</Link>
         </p>
       </form>
     </div>

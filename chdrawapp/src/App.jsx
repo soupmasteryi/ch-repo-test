@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from "react";
+import { Routes, Route, useNavigate, useParams } from "react-router-dom";
 import "./App.css";
 import Header from "./components/Header/Header";
 import Sidebar from "./components/Sidebar/Sidebar";
 import Whiteboard from "./components/Whiteboard/Whiteboard";
 import Login from "./components/Login/Login";
 import Register from "./components/Register/Register";
+import Dashboard from "./components/Dashboard/Dashboard";
 import { createWhiteboard, getWhiteboard } from "./api/whiteboards";
+import { logout } from "./api/auth";
 
 const COLORS = [
   "#000000",
@@ -18,7 +21,67 @@ const COLORS = [
   "#7b2ff7",
 ];
 
-export default function App() {
+function LoadingOverlay() {
+  return (
+    <div className="loading-overlay" role="alert" aria-busy="true">
+      <div className="loading-text">Loading...</div>
+    </div>
+  );
+}
+
+// Loads a whiteboard referenced by /wb/:code into localStorage, then sends the
+// user to the editor which reads that data on mount.
+function WhiteboardLoader() {
+  const { code: rawCode } = useParams();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const code = decodeURIComponent(rawCode);
+    getWhiteboard({
+      token: localStorage.getItem("token"),
+      userId: localStorage.getItem("userId"),
+      code,
+    })
+      .then(({ canvasData }) => {
+        localStorage.setItem("whiteboardCode", code);
+        localStorage.setItem("canvasLoadData", canvasData);
+      })
+      .catch((err) => {
+        console.error("Failed to load whiteboard from /wb route:", err);
+      })
+      .finally(() => {
+        navigate("/", { replace: true });
+      });
+  }, [rawCode, navigate]);
+
+  return <LoadingOverlay />;
+}
+
+// Clears the user's session, calls the logout endpoint, then sends the user
+// back home. A full reload happens via the redirect so no stale state lingers.
+function Logout() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const current = localStorage.getItem("token");
+    localStorage.removeItem("token");
+    localStorage.removeItem("userId");
+    localStorage.removeItem("canvasLoadData");
+    localStorage.removeItem("whiteboardCode");
+
+    const finish = () => navigate("/", { replace: true });
+
+    if (current) {
+      logout(current).finally(finish);
+    } else {
+      finish();
+    }
+  }, [navigate]);
+
+  return <LoadingOverlay />;
+}
+
+function Home() {
   const [tool, setTool] = useState("pencil");
   const [color, setColor] = useState(COLORS[0]);
   const [thicknessByTool, setThicknessByTool] = useState({
@@ -32,7 +95,6 @@ export default function App() {
   const setThickness = (n) => setThicknessByTool((m) => ({ ...m, [tool]: n }));
   const [edgeLength, setEdgeLength] = useState(70);
   const [lineStyle, setLineStyle] = useState("solid");
-  const [path, setPath] = useState(window.location.pathname);
   const [clearSignal, setClearSignal] = useState(0);
   const historyApiRef = useRef(null);
   const canvasApiRef = useRef(null);
@@ -87,7 +149,6 @@ export default function App() {
     if (generating) return;
     setGenerateError("");
     setGenerating(true);
-    let canvasData = localStorage.getItem("canvasLoadData") ?? null;
     try {
       const whiteboard = await createWhiteboard({
         token: localStorage.getItem("token"),
@@ -103,53 +164,6 @@ export default function App() {
       setGenerating(false);
     }
   };
-
-  useEffect(() => {
-    const onPop = () => setPath(window.location.pathname);
-    window.addEventListener("popstate", onPop);
-    return () => window.removeEventListener("popstate", onPop);
-  }, []);
-
-  useEffect(() => {
-    const match = window.location.pathname.match(/^\/wb\/(.+)$/);
-    if (!match) return;
-    const code = decodeURIComponent(match[1]);
-    getWhiteboard({
-      token: localStorage.getItem("token"),
-      userId: localStorage.getItem("userId"),
-      code,
-    })
-      .then(({ canvasData }) => {
-        localStorage.setItem("whiteboardCode", code);
-        console.log(`setcode: ${code}`);
-        localStorage.setItem("canvasLoadData", canvasData);
-        console.log(`setdata: ${canvasData.slice(0, 100)}`);
-      })
-      .catch((err) => {
-        console.error("Failed to load whiteboard from /wb route:", err);
-      })
-      .finally(() => {
-        /*window.history.replaceState(null, "", "/");
-        setPath("/");
-        window.location.reload();*/
-      });
-  }, []);
-
-  if (path.startsWith("/wb/")) {
-    return (
-      <div className="loading-overlay" role="alert" aria-busy="true">
-        <div className="loading-text">Loading...</div>
-      </div>
-    );
-  }
-
-  if (path === "/login") {
-    return <Login />;
-  }
-
-  if (path === "/register") {
-    return <Register />;
-  }
 
   return (
     <div className="app">
@@ -293,11 +307,20 @@ export default function App() {
         </div>
       )}
 
-      {isLoading && (
-        <div className="loading-overlay" role="alert" aria-busy="true">
-          <div className="loading-text">Loading...</div>
-        </div>
-      )}
+      {isLoading && <LoadingOverlay />}
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<Home />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/logout" element={<Logout />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/wb/:code" element={<WhiteboardLoader />} />
+    </Routes>
   );
 }

@@ -9,6 +9,7 @@ import Register from "./components/Register/Register";
 import Dashboard from "./components/Dashboard/Dashboard";
 import { createWhiteboard, getWhiteboard } from "./api/whiteboards";
 import { logout } from "./api/auth";
+import { idbGet, idbSet, idbRemove } from "./idb";
 
 const COLORS = [
   "#000000",
@@ -29,8 +30,6 @@ function LoadingOverlay() {
   );
 }
 
-// Loads a whiteboard referenced by /wb/:code into localStorage, then sends the
-// user to the editor which reads that data on mount.
 function WhiteboardLoader() {
   const { code: rawCode } = useParams();
   const navigate = useNavigate();
@@ -42,9 +41,9 @@ function WhiteboardLoader() {
       userId: localStorage.getItem("userId"),
       code,
     })
-      .then(({ canvasData }) => {
+      .then(async ({ canvasData }) => {
         localStorage.setItem("whiteboardCode", code);
-        localStorage.setItem("canvasLoadData", canvasData);
+        return idbSet("canvasLoadData", canvasData);
       })
       .catch((err) => {
         console.error("Failed to load whiteboard from /wb route:", err);
@@ -57,8 +56,6 @@ function WhiteboardLoader() {
   return <LoadingOverlay />;
 }
 
-// Clears the user's session, calls the logout endpoint, then sends the user
-// back home. A full reload happens via the redirect so no stale state lingers.
 function Logout() {
   const navigate = useNavigate();
 
@@ -66,16 +63,12 @@ function Logout() {
     const current = localStorage.getItem("token");
     localStorage.removeItem("token");
     localStorage.removeItem("userId");
-    localStorage.removeItem("canvasLoadData");
     localStorage.removeItem("whiteboardCode");
+    const rmDone = idbRemove("canvasLoadData");
 
     const finish = () => navigate("/", { replace: true });
 
-    if (current) {
-      logout(current).finally(finish);
-    } else {
-      finish();
-    }
+    rmDone.then(current ? logout(current) : Promise.resolve()).finally(finish);
   }, [navigate]);
 
   return <LoadingOverlay />;
@@ -106,9 +99,13 @@ function Home() {
   const [generating, setGenerating] = useState(false);
   const [generatedCode, setGeneratedCode] = useState(null);
   const [generateError, setGenerateError] = useState("");
-  const [canvasLoadData, setCanvasLoadData] = useState(() => {
-    return localStorage.getItem("canvasLoadData") ?? null;
-  });
+  const [canvasLoadData, setCanvasLoadData] = useState(null);
+
+  useEffect(() => {
+    idbGet("canvasLoadData").then((data) => {
+      setCanvasLoadData(data ?? null);
+    });
+  }, []);
 
   const handleLoadSubmit = async (e) => {
     e?.preventDefault();
@@ -124,7 +121,7 @@ function Home() {
         code,
       });
       localStorage.setItem("whiteboardCode", code);
-      localStorage.setItem("canvasLoadData", canvasData);
+      await idbSet("canvasLoadData", canvasData);
       setCanvasLoadData(canvasData);
     } catch (err) {
       setIsLoading(false);
@@ -153,7 +150,7 @@ function Home() {
       const whiteboard = await createWhiteboard({
         token: localStorage.getItem("token"),
         userId: localStorage.getItem("userId"),
-        canvasData: localStorage.getItem("canvasLoadData"),
+        canvasData: await idbGet("canvasLoadData"),
         previewDataUrl: canvasApiRef.current?.toPreviewDataUrl(),
       });
       setGeneratedCode(whiteboard.id);

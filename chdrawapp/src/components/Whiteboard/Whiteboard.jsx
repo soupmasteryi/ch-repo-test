@@ -14,6 +14,7 @@ import {
 import { UndirectedGraph } from "graphology";
 
 import { updateWhiteboard } from "../../api/whiteboards";
+import { idbSet, idbRemove } from "../../idb";
 import "./Whiteboard.css";
 import MoleculeStuff from "./MoleculeStuff";
 import makeMouseSafeBrush from "./makeMouseSafeBrush";
@@ -59,62 +60,60 @@ export default function Whiteboard({
   const colorRef = useRef(color);
   const thicknessRef = useRef(thickness);
   const isMouseDown = useRef(false);
-  const isRestoringRef = useRef(false);const serializeCanvas = (canvas) => {
-      return JSON.stringify(
-        (() => {
-          const forceInclude = [
-            "_moleculeStuff",
-            "_history",
-            "_obj_ref",
-            "_custom_id",
-            "selectable",
-            "evented",
-            "width",
-            "height",
-          ];
-          const c = canvas.toObject(forceInclude);
-          for (const op of c._history.redoStack) {
-            if (op.type === "addBasic") {
-              op.object._obj_data = op.object._obj_ref.toObject(forceInclude);
-            } else if (op.type === "moleculePathAdd") {
-              op.object.newNodes.forEach((n) => {
-                n._obj_data = n._obj_ref.toObject(forceInclude);
-              });
-              op.object.newEdges.forEach((e) => {
-                e._obj_data = e._obj_ref.toObject(forceInclude);
-              });
-            } else if (op.type === "moleculeEdgeMultiply") {
-              op.object._obj_data = op.object._obj_ref.toObject(forceInclude);
-            } else if (op.type === "moleculeTextAdd") {
-              op.object.text._obj_data =
-                op.object.text._obj_ref.toObject(forceInclude);
-              op.object.textBkg._obj_data =
-                op.object.textBkg._obj_ref.toObject(forceInclude);
-            }
+  const isRestoringRef = useRef(false);
+  const serializeCanvas = (canvas) => {
+    return JSON.stringify(
+      (() => {
+        const forceInclude = [
+          "_moleculeStuff",
+          "_history",
+          "_obj_ref",
+          "_custom_id",
+          "selectable",
+          "evented",
+          "width",
+          "height",
+        ];
+        const c = canvas.toObject(forceInclude);
+        for (const op of c._history.redoStack) {
+          if (op.type === "addBasic") {
+            op.object._obj_data = op.object._obj_ref.toObject(forceInclude);
+          } else if (op.type === "moleculePathAdd") {
+            op.object.newNodes.forEach((n) => {
+              n._obj_data = n._obj_ref.toObject(forceInclude);
+            });
+            op.object.newEdges.forEach((e) => {
+              e._obj_data = e._obj_ref.toObject(forceInclude);
+            });
+          } else if (op.type === "moleculeEdgeMultiply") {
+            op.object._obj_data = op.object._obj_ref.toObject(forceInclude);
+          } else if (op.type === "moleculeTextAdd") {
+            op.object.text._obj_data =
+              op.object.text._obj_ref.toObject(forceInclude);
+            op.object.textBkg._obj_data =
+              op.object.textBkg._obj_ref.toObject(forceInclude);
           }
-          return c;
-        })(),
-        function (k, v) {
-          if (k === "_obj_ref") return null;
-          else if (k === "_obj_data") {
-            this._obj_data = undefined;
-            return v;
-          }
+        }
+        return c;
+      })(),
+      function (k, v) {
+        if (k === "_obj_ref") return null;
+        else if (k === "_obj_data") {
+          this._obj_data = undefined;
           return v;
-        },
-      );
-    };
+        }
+        return v;
+      },
+    );
+  };
 
   const synchronizeCanvas = (canvas) => {
     const loadData = serializeCanvas(canvas);
-    try {
-      localStorage.setItem("canvasLoadData", loadData);
-    } catch (ex) {
+    idbSet("canvasLoadData", loadData).catch((ex) => {
       console.log(ex);
-    }
+    });
     const whiteboardCode = localStorage.getItem("whiteboardCode");
-    if (!whiteboardCode)
-      return;
+    if (!whiteboardCode) return;
     else {
       updateWhiteboard({
         token: localStorage.getItem("token"),
@@ -921,9 +920,8 @@ export default function Whiteboard({
     canvas.renderAll();
     canvas._history.undoStack = [];
     canvas._history.redoStack = [];
-    localStorage.removeItem("canvasLoadData");
     localStorage.removeItem("whiteboardCode");
-    setPageHeight(A4_HEIGHT);
+    idbRemove("canvasLoadData").then(() => setPageHeight(A4_HEIGHT));
   }, [clearSignal]);
 
   const extendCanvas = () => {
@@ -1018,14 +1016,13 @@ export default function Whiteboard({
             );
           }
         }
-        Promise.all(promises).then(() => {
-          cnv.setDimensions({ width: cnv.width, height: cnv.height });
-          setPageHeight(cnv.height);
-          cnv.renderAll();
-          localStorage.setItem("canvasLoadData", canvasLoadData);
-          setCanvasLoadData(null);
-          setIsLoading(false);
-        });
+        return Promise.all(promises).then(() => Promise.resolve(cnv));
+      })
+      .then((cnv) => {
+        cnv.setDimensions({ width: cnv.width, height: cnv.height });
+        setPageHeight(cnv.height);
+        cnv.renderAll();
+        return idbSet("canvasLoadData", canvasLoadData);
       })
       .catch((ev) => {
         if (
@@ -1035,6 +1032,10 @@ export default function Whiteboard({
           return;
         }
         throw ev;
+      })
+      .finally(() => {
+        setCanvasLoadData(null);
+        setIsLoading(false);
       });
 
     return () => {

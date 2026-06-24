@@ -13,7 +13,6 @@ export default function Register() {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  // If already logged in, go straight to the home page.
   useEffect(() => {
     if (localStorage.getItem("token")) {
       navigate("/", { replace: true });

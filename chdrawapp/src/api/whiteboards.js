@@ -154,7 +154,6 @@ export async function deleteWhiteboard({ token, userId, id }) {
 
 export async function fetchPreview({ token, previewUrl }) {
   const url = `${API_BASE_URL}${previewUrl.startsWith("/") ? "" : "/"}${previewUrl}`;
-  console.log(url);
 
   const res = await fetch(url, {
     headers: { Authorization: `Bearer ${token}` },

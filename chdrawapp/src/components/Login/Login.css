@@ -53,6 +53,16 @@
   background: #1668c4;
 }
 
+.login-button:disabled {
+  background: #9bbfe8;
+  cursor: default;
+}
+
+.login-error {
+  font-size: 12px;
+  color: #e63946;
+}
+
 .login-footer {
   margin: 8px 0 0;
   text-align: center;

@@ -1,5 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./Register.css";
+import { register } from "../../api/auth";
+
+function navigateTo(path) {
+  window.history.pushState({}, "", path);
+  window.dispatchEvent(new PopStateEvent("popstate"));
+}
 
 export default function Register() {
   const [email, setEmail] = useState("");
@@ -7,6 +13,15 @@ export default function Register() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [emailValid, setEmailValid] = useState(null);
   const [passwordsMatch, setPasswordsMatch] = useState(null);
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  // If already logged in, go straight to the home page.
+  useEffect(() => {
+    if (localStorage.getItem("token")) {
+      navigateTo("/");
+    }
+  }, []);
 
   const handleEmailBlur = () => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -17,8 +32,28 @@ export default function Register() {
     setPasswordsMatch(confirmPassword === password);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    if (submitting) return;
+
+    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    const passwordsOk = confirmPassword === password;
+    setEmailValid(emailOk);
+    setPasswordsMatch(passwordsOk);
+    setError("");
+    if (!emailOk || !passwordsOk) return;
+
+    setSubmitting(true);
+    try {
+      const { accessToken, user } = await register({ email, password });
+      localStorage.setItem("token", accessToken);
+      if (user?.id) localStorage.setItem("userId", user.id);
+      navigateTo("/");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -72,8 +107,9 @@ export default function Register() {
             </span>
           )}
         </label>
-        <button type="submit" className="register-button">
-          Register
+        {error && <span className="register-msg-err">{error}</span>}
+        <button type="submit" className="register-button" disabled={submitting}>
+          {submitting ? "Registering…" : "Register"}
         </button>
         <p className="register-footer">
           Already have an account? <a href="/login">Login</a>

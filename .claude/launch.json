@@ -5,7 +5,8 @@
       "name": "chdrawapp",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["start", "--prefix", "chdrawapp"],
-      "port": 3000
+      "port": 3000,
+      "autoPort": true
     }
   ]
 }

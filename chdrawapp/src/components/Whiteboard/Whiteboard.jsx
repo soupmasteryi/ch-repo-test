@@ -13,6 +13,7 @@ import {
 } from "fabric";
 import { UndirectedGraph } from "graphology";
 
+import { updateWhiteboard } from "../../api/whiteboards";
 import "./Whiteboard.css";
 import MoleculeStuff from "./MoleculeStuff";
 import makeMouseSafeBrush from "./makeMouseSafeBrush";
@@ -34,6 +35,7 @@ export default function Whiteboard({
   lineStyle,
   clearSignal,
   historyApiRef,
+  canvasApiRef,
   canvasLoadData,
   setCanvasLoadData,
   setIsLoading,
@@ -57,39 +59,7 @@ export default function Whiteboard({
   const colorRef = useRef(color);
   const thicknessRef = useRef(thickness);
   const isMouseDown = useRef(false);
-  const isRestoringRef = useRef(false);
-
-  const pushHistory = (op) => {
-    if (isRestoringRef.current) return;
-
-    const canvas = fabricRef.current;
-    if (!canvas) return;
-    canvas._history.undoStack.push(op);
-    canvas._history.redoStack = [];
-
-    try {
-      localStorage.setItem("canvasLoadData", serializeCanvas(canvas));
-    } catch (ex) {
-      console.log(ex);
-    }
-  };
-
-  useEffect(() => {
-    const canvas = new Canvas(canvasElRef.current, {
-      backgroundColor: "#ffffff",
-      selection: false,
-    });
-
-    canvas._history = {
-      undoStack: [],
-      redoStack: [],
-    };
-
-    canvas._moleculeStuff = new MoleculeStuff();
-    canvas.setDimensions({ width: A4_WIDTH, height: A4_HEIGHT });
-    canvas.renderAll();
-
-    const serializeCanvas = (canvas) => {
+  const isRestoringRef = useRef(false);const serializeCanvas = (canvas) => {
       return JSON.stringify(
         (() => {
           const forceInclude = [
@@ -134,6 +104,55 @@ export default function Whiteboard({
         },
       );
     };
+
+  const synchronizeCanvas = (canvas) => {
+    const loadData = serializeCanvas(canvas);
+    try {
+      localStorage.setItem("canvasLoadData", loadData);
+    } catch (ex) {
+      console.log(ex);
+    }
+    const whiteboardCode = localStorage.getItem("whiteboardCode");
+    if (!whiteboardCode)
+      return;
+    else {
+      updateWhiteboard({
+        token: localStorage.getItem("token"),
+        userId: localStorage.getItem("userId"),
+        code: whiteboardCode,
+        canvasData: loadData,
+      }).catch((ex) => {
+        console.log(ex);
+      });
+    }
+  };
+
+  const pushHistory = (op) => {
+    if (isRestoringRef.current) return;
+
+    const canvas = fabricRef.current;
+    if (!canvas) return;
+    canvas._history.undoStack.push(op);
+    canvas._history.redoStack = [];
+
+    synchronizeCanvas(canvas);
+  };
+
+  useEffect(() => {
+    const canvas = new Canvas(canvasElRef.current, {
+      backgroundColor: "#ffffff",
+      selection: false,
+    });
+
+    canvas._history = {
+      undoStack: [],
+      redoStack: [],
+    };
+
+    canvas._moleculeStuff = new MoleculeStuff();
+    canvas.setDimensions({ width: A4_WIDTH, height: A4_HEIGHT });
+    canvas.renderAll();
+
     fabricRef.current = canvas;
 
     const pencilBrush = makeMouseSafeBrush(new PencilBrush(canvas));
@@ -446,11 +465,7 @@ export default function Whiteboard({
 
       canvas.renderAll();
 
-      try {
-        localStorage.setItem("canvasLoadData", serializeCanvas(canvas));
-      } catch (ex) {
-        console.log(ex);
-      }
+      synchronizeCanvas(canvas);
       isRestoringRef.current = false;
     };
 
@@ -513,11 +528,7 @@ export default function Whiteboard({
 
       canvas.renderAll();
 
-      try {
-        localStorage.setItem("canvasLoadData", serializeCanvas(canvas));
-      } catch (ex) {
-        console.log(ex);
-      }
+      synchronizeCanvas(canvas);
       isRestoringRef.current = false;
     };
 
@@ -525,6 +536,13 @@ export default function Whiteboard({
       historyApiRef.current = {
         undo,
         redo,
+      };
+    }
+
+    if (canvasApiRef) {
+      canvasApiRef.current = {
+        toPreviewDataUrl: () =>
+          canvas.toDataURL({ format: "png", multiplier: 0.3 }),
       };
     }
 
@@ -848,10 +866,10 @@ export default function Whiteboard({
       canvas.dispose();
       fabricRef.current = null;
       if (historyApiRef) historyApiRef.current = null;
+      if (canvasApiRef) canvasApiRef.current = null;
     };
   }, []);
 
-  // Apply tool / color changes to the canvas.
   useEffect(() => {
     toolRef.current = tool;
     colorRef.current = color;
@@ -904,6 +922,7 @@ export default function Whiteboard({
     canvas._history.undoStack = [];
     canvas._history.redoStack = [];
     localStorage.removeItem("canvasLoadData");
+    localStorage.removeItem("whiteboardCode");
     setPageHeight(A4_HEIGHT);
   }, [clearSignal]);
 
@@ -1003,6 +1022,7 @@ export default function Whiteboard({
           cnv.setDimensions({ width: cnv.width, height: cnv.height });
           setPageHeight(cnv.height);
           cnv.renderAll();
+          localStorage.setItem("canvasLoadData", canvasLoadData);
           setCanvasLoadData(null);
           setIsLoading(false);
         });

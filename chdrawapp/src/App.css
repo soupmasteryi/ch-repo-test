@@ -28,6 +28,19 @@
   border-color: #1d7be3;
 }
 
+.modal-error {
+  margin: 0 0 14px;
+  color: #e63946;
+  font-size: 13px;
+}
+
+.modal-warning {
+  margin: 0 0 14px;
+  color: #b8860b;
+  font-size: 13px;
+  font-weight: 600;
+}
+
 .loading-overlay {
   position: fixed;
   inset: 0;

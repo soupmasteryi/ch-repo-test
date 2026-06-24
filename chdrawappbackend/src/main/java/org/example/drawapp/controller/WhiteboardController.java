@@ -9,6 +9,7 @@ import org.example.drawapp.model.Whiteboard;
 import org.example.drawapp.security.AuthPrincipal;
 import org.example.drawapp.service.WhiteboardService;
 import org.example.drawapp.validation.WhiteboardCode;
+import org.example.drawapp.validation.WhiteboardCodeValidator;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -149,6 +150,18 @@ public class WhiteboardController {
     }
 
     private Long whiteboardIdFromCode(String code) {
-        return Base58.decodeToBigInteger(code).longValueExact();
+        long id;
+        try {
+            id = Base58.decodeToBigInteger(code).longValueExact();
+        } catch (RuntimeException ex) {
+            // Not valid Base58, or decodes to a value that doesn't fit in a long.
+            // An unresolvable code can't reference a whiteboard, so treat it the
+            // same as a missing one rather than letting it surface as a 500.
+            throw ApiException.notFound("Whiteboard not found");
+        }
+        if (id < WhiteboardCodeValidator.ID_START) {
+            throw ApiException.notFound("Whiteboard not found");
+        }
+        return id;
     }
 }

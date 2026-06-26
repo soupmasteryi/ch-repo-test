@@ -2,14 +2,14 @@ import { useState } from "react";
 import "./Sidebar.css";
 
 const TOOLS = [
-  { id: "pencil", label: "Pencil", icon: "✏️" },
+  { id: "pencil", label: "Pencil", icon: "✎" },
   { id: "line", label: "Line", icon: "╱" },
   { id: "arrow", label: "Arrow", icon: "➤" },
   { id: "curvedArrow", label: "Curved Arrow", icon: "↝" },
   { id: "rectangle", label: "Rectangle", icon: "▭" },
   { id: "circle", label: "Circle", icon: "◯" },
   { id: "circleBrush", label: "Circle Brush", icon: "⊙" },
-  { id: "pencil2", label: "Pencil 2", icon: "✎" },
+  { id: "pencil2", label: "Molecule Pencil", icon: "✎" },
   { id: "text", label: "Text", icon: "T" },
 ];
 
@@ -37,6 +37,13 @@ export default function Sidebar({
     onClearCanvas?.();
     setShowDeleteModal(false);
   };
+
+  const isSimpleTool =
+    tool === "pencil" ||
+    tool === "line" ||
+    tool === "rectangle" ||
+    tool === "circle" ||
+    tool === "circleBrush";
 
   return (
     <aside className="sidebar">
@@ -101,13 +108,13 @@ export default function Sidebar({
         </section>
       )}
 
-      <section className="sidebar-section">
+      {tool !== "text" && (<section className="sidebar-section">
         <h2 className="sidebar-heading">Thickness</h2>
         <div className="thickness-row">
           <input
             type="range"
             min={1}
-            max={5}
+            max={isSimpleTool ? 20 : 5}
             step={0.25}
             value={thickness}
             onChange={(e) => onThicknessChange(Number(e.target.value))}
@@ -115,7 +122,7 @@ export default function Sidebar({
           />
           <span className="thickness-value">{thickness}px</span>
         </div>
-      </section>
+      </section>)}
 
       {tool === "pencil2" && (
         <section className="sidebar-section">

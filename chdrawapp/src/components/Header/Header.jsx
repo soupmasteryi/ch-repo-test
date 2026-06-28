@@ -2,11 +2,29 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "./Header.css";
 
-export default function Header({ onLoadClick, onSaveClick }) {
+export default function Header({
+  onLoadClick,
+  onSaveClick,
+  title,
+  onTitleCommit,
+  isPublic,
+  onVisibilityToggle,
+}) {
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
   const [menuOpen, setMenuOpen] = useState(false);
   const accountRef = useRef(null);
+  const titleEditable = !!localStorage.getItem("whiteboardCode");
+  const [titleDraft, setTitleDraft] = useState(title ?? "");
+
+  useEffect(() => {
+    setTitleDraft(title ?? "");
+  }, [title]);
+
+  const commitTitle = () => {
+    if (titleDraft === title) return;
+    onTitleCommit?.(titleDraft);
+  };
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -40,6 +58,38 @@ export default function Header({ onLoadClick, onSaveClick }) {
         >
           save
         </button>
+        <input
+          type="text"
+          className="header-title"
+          value={titleEditable ? titleDraft : (title ?? "")}
+          onChange={(e) => setTitleDraft(e.target.value)}
+          onBlur={commitTitle}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              e.currentTarget.blur();
+            } else if (e.key === "Escape") {
+              e.preventDefault();
+              setTitleDraft(title ?? "");
+            }
+          }}
+          readOnly={!titleEditable}
+          disabled={!titleEditable}
+          title={
+            titleEditable ? title : "Save or load a whiteboard to edit its title"
+          }
+          aria-label="Current whiteboard title"
+        />
+        {token && titleEditable && (
+          <label className="header-public">
+            <input
+              type="checkbox"
+              checked={!!isPublic}
+              onChange={(e) => onVisibilityToggle?.(e.target.checked)}
+            />
+            Make Public
+          </label>
+        )}
       </div>
       {token ? (
         <div className="header-account" ref={accountRef}>

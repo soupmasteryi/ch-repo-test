@@ -13,7 +13,7 @@ import {
 } from "fabric";
 import { UndirectedGraph } from "graphology";
 
-import { updateWhiteboard } from "../../api/whiteboards";
+import { updateWhiteboardCanvas } from "../../api/whiteboards";
 import { idbSet, idbRemove } from "../../idb";
 import "./Whiteboard.css";
 import MoleculeStuff from "./MoleculeStuff";
@@ -112,18 +112,15 @@ export default function Whiteboard({
     idbSet("canvasLoadData", loadData).catch((ex) => {
       console.log(ex);
     });
-    const whiteboardCode = localStorage.getItem("whiteboardCode");
-    if (!whiteboardCode) return;
-    else {
-      updateWhiteboard({
-        token: localStorage.getItem("token"),
-        userId: localStorage.getItem("userId"),
-        code: whiteboardCode,
-        canvasData: loadData,
-      }).catch((ex) => {
-        console.log(ex);
-      });
-    }
+    const canvasUrl = localStorage.getItem("canvasUrl");
+
+    updateWhiteboardCanvas({
+      token: localStorage.getItem("token"),
+      canvasUrl,
+      canvasData: loadData,
+    }).catch((ex) => {
+      console.log(ex);
+    });
   };
 
   const pushHistory = (op) => {

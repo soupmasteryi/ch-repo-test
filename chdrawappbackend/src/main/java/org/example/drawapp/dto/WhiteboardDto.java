@@ -6,10 +6,12 @@ import org.example.drawapp.model.Whiteboard;
 
 public record WhiteboardDto(
         String id,
+        String title,
         String userId,
         String previewUrl,
         String canvasUrl,
-        String createdAt
+        String createdAt,
+        Boolean isPublic
 ) {
 
     public static WhiteboardDto from(Whiteboard wb) {
@@ -18,10 +20,12 @@ public record WhiteboardDto(
         String base = "/users/" + userId + "/whiteboards/" + code;
         return new WhiteboardDto(
                 code,
+                wb.getTitle(),
                 userId,
                 base + "/preview",
                 base + "/canvas",
-                wb.getCreatedAt().toString()
+                wb.getCreatedAt().toString(),
+                wb.isPublic()
         );
     }
 

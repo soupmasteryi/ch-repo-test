@@ -14,6 +14,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 public class JwtAuthFilter extends OncePerRequestFilter {
 
@@ -26,13 +27,21 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         this.blacklistRepository = blacklistRepository;
     }
 
+    // GET /api/v1/whiteboards/{code}[/canvas|/preview] are publicly accessible
+    private static final Pattern PUBLIC_WHITEBOARD_GET =
+            Pattern.compile("^/api/v1/users/[^/]+/whiteboards/[^/]+(?:/canvas|/preview)?$");
+
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
             return true;
         }
         String path = request.getRequestURI();
-        return path.equals("/api/v1/auth/register") || path.equals("/api/v1/auth/login");
+        if (path.equals("/api/v1/auth/register") || path.equals("/api/v1/auth/login")) {
+            return true;
+        }
+        return "GET".equalsIgnoreCase(request.getMethod())
+                && PUBLIC_WHITEBOARD_GET.matcher(path).matches();
     }
 
     @Override

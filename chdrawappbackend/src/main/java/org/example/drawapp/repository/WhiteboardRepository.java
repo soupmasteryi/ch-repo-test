@@ -12,4 +12,5 @@ public interface WhiteboardRepository extends JpaRepository<Whiteboard, Long> {
     List<Whiteboard> findByUserIdOrderByCreatedAtDesc(UUID userId);
 
     Optional<Whiteboard> findByIdAndUserId(Long id, UUID userId);
+    Optional<Whiteboard> findByIdAndIsPublicTrue(Long id);
 }

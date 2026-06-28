@@ -38,6 +38,7 @@ public class WhiteboardService {
 
         Whiteboard wb = new Whiteboard();
         wb.setUser(user);
+        wb.setTitle(data.title());
         wb.setPreview(preview);
         wb.setPreviewContentType(previewContentType != null ? previewContentType : "image/png");
         wb.setCanvas(canvas);
@@ -46,20 +47,27 @@ public class WhiteboardService {
     }
 
     @Transactional(readOnly = true)
-    public Whiteboard get(UUID userId, Long id) {
+    public Whiteboard getPublic(UUID userId, Long id) {
+        return whiteboardRepository.findByIdAndUserId(id, userId)
+                .orElseGet(() -> whiteboardRepository.findByIdAndIsPublicTrue(id)
+                        .orElseThrow(() -> ApiException.notFound("Whiteboard not found")));
+    }
+
+    @Transactional(readOnly = true)
+    public Whiteboard getPrivate(UUID userId, Long id) {
         return whiteboardRepository.findByIdAndUserId(id, userId)
                 .orElseThrow(() -> ApiException.notFound("Whiteboard not found"));
     }
 
     @Transactional
     public void delete(UUID userId, Long id) {
-        Whiteboard wb = get(userId, id);
+        Whiteboard wb = getPrivate(userId, id);
         whiteboardRepository.delete(wb);
     }
 
     @Transactional
     public Whiteboard updatePreview(UUID userId, Long id, byte[] preview, String contentType) {
-        Whiteboard wb = get(userId, id);
+        Whiteboard wb = getPrivate(userId, id);
         wb.setPreview(preview);
         wb.setPreviewContentType(contentType != null ? contentType : "image/png");
         return whiteboardRepository.save(wb);
@@ -67,8 +75,22 @@ public class WhiteboardService {
 
     @Transactional
     public Whiteboard updateCanvas(UUID userId, Long id, byte[] canvas) {
-        Whiteboard wb = get(userId, id);
+        Whiteboard wb = getPrivate(userId, id);
         wb.setCanvas(canvas);
+        return whiteboardRepository.save(wb);
+    }
+
+    @Transactional
+    public Whiteboard updateTitle(UUID userId, Long id, String title) {
+        Whiteboard wb = getPrivate(userId, id);
+        wb.setTitle(title);
+        return whiteboardRepository.save(wb);
+    }
+
+    @Transactional
+    public Whiteboard updateVisibility(UUID userId, Long id, boolean isPublic) {
+        Whiteboard wb = getPrivate(userId, id);
+        wb.setPublic(isPublic);
         return whiteboardRepository.save(wb);
     }
 }

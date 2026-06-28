@@ -7,9 +7,14 @@ import Whiteboard from "./components/Whiteboard/Whiteboard";
 import Login from "./components/Login/Login";
 import Register from "./components/Register/Register";
 import Dashboard from "./components/Dashboard/Dashboard";
-import { createWhiteboard, getWhiteboard } from "./api/whiteboards";
+import {
+  createWhiteboard,
+  getWhiteboard,
+  updateWhiteboardTitle,
+  updateWhiteboardVisibility,
+} from "./api/whiteboards";
 import { logout } from "./api/auth";
-import { idbGet, idbSet, idbRemove } from "./idb";
+import { idbGet, idbRemove } from "./idb";
 
 const COLORS = [
   "#000000",
@@ -37,14 +42,9 @@ function WhiteboardLoader() {
   useEffect(() => {
     const code = decodeURIComponent(rawCode);
     getWhiteboard({
-      token: localStorage.getItem("token"),
       userId: localStorage.getItem("userId"),
       code,
     })
-      .then(async ({ canvasData }) => {
-        localStorage.setItem("whiteboardCode", code);
-        return idbSet("canvasLoadData", canvasData);
-      })
       .catch((err) => {
         console.error("Failed to load whiteboard from /wb route:", err);
       })
@@ -61,9 +61,7 @@ function Logout() {
 
   useEffect(() => {
     const current = localStorage.getItem("token");
-    localStorage.removeItem("token");
-    localStorage.removeItem("userId");
-    localStorage.removeItem("whiteboardCode");
+    localStorage.clear();
     const rmDone = idbRemove("canvasLoadData");
 
     const finish = () => navigate("/", { replace: true });
@@ -100,12 +98,54 @@ function Home() {
   const [generatedCode, setGeneratedCode] = useState(null);
   const [generateError, setGenerateError] = useState("");
   const [canvasLoadData, setCanvasLoadData] = useState(null);
+  const [title, setTitle] = useState(
+    () => localStorage.getItem("title") ?? "Untitled Whiteboard",
+  );
+  const [isPublic, setIsPublic] = useState(
+    () => localStorage.getItem("isPublic") === "true",
+  );
 
   useEffect(() => {
     idbGet("canvasLoadData").then((data) => {
       setCanvasLoadData(data ?? null);
     });
   }, []);
+
+  const handleTitleCommit = async (newTitle) => {
+    const trimmed = newTitle.trim();
+    const code = localStorage.getItem("whiteboardCode");
+    if (!code || !trimmed || trimmed === title) return;
+    try {
+      const whiteboard = await updateWhiteboardTitle({
+        token: localStorage.getItem("token"),
+        userId: localStorage.getItem("userId"),
+        code,
+        title: trimmed,
+      });
+      setTitle(whiteboard.title);
+    } catch (err) {
+      console.error("Failed to update title:", err);
+      setTitle(localStorage.getItem("title") ?? "Untitled Whiteboard");
+    }
+  };
+
+  const handleVisibilityToggle = async (nextIsPublic) => {
+    const code = localStorage.getItem("whiteboardCode");
+    if (!code) return;
+    setIsPublic(nextIsPublic);
+    try {
+      const whiteboard = await updateWhiteboardVisibility({
+        token: localStorage.getItem("token"),
+        userId: localStorage.getItem("userId"),
+        code,
+        isPublic: nextIsPublic,
+      });
+      setIsPublic(whiteboard.isPublic);
+    } catch (err) {
+      console.error("Failed to update visibility:", err);
+      setIsPublic(localStorage.getItem("isPublic") === "true");
+    }
+  };
 
   const handleLoadSubmit = async (e) => {
     e?.preventDefault();
@@ -115,14 +155,13 @@ function Home() {
     setShowLoadModal(false);
     setIsLoading(true);
     try {
-      const { canvasData } = await getWhiteboard({
-        token: localStorage.getItem("token"),
+      const { canvas } = await getWhiteboard({
         userId: localStorage.getItem("userId"),
         code,
       });
-      localStorage.setItem("whiteboardCode", code);
-      await idbSet("canvasLoadData", canvasData);
-      setCanvasLoadData(canvasData);
+      setCanvasLoadData(canvas);
+      setTitle(localStorage.getItem("title") ?? "Untitled Whiteboard");
+      setIsPublic(localStorage.getItem("isPublic") === "true");
     } catch (err) {
       setIsLoading(false);
       setLoadError(err.message);
@@ -150,11 +189,14 @@ function Home() {
       const whiteboard = await createWhiteboard({
         token: localStorage.getItem("token"),
         userId: localStorage.getItem("userId"),
+        title: localStorage.getItem("title") ?? "Untitled Whiteboard",
         canvasData: await idbGet("canvasLoadData"),
         previewDataUrl: canvasApiRef.current?.toPreviewDataUrl(),
       });
       setGeneratedCode(whiteboard.id);
       localStorage.setItem("whiteboardCode", whiteboard.id);
+      setTitle(localStorage.getItem("title") ?? "Untitled Whiteboard");
+      setIsPublic(localStorage.getItem("isPublic") === "true");
     } catch (err) {
       setGenerateError(err.message);
     } finally {
@@ -164,7 +206,14 @@ function Home() {
 
   return (
     <div className="app">
-      <Header onLoadClick={openLoadModal} onSaveClick={openSaveModal} />
+      <Header
+        onLoadClick={openLoadModal}
+        onSaveClick={openSaveModal}
+        title={title}
+        onTitleCommit={handleTitleCommit}
+        isPublic={isPublic}
+        onVisibilityToggle={handleVisibilityToggle}
+      />
       <div className="app-body">
         <Sidebar
           tool={tool}

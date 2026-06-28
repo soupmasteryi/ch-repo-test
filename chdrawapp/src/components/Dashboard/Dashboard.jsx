@@ -7,6 +7,7 @@ import {
   deleteWhiteboard,
   fetchPreview,
 } from "../../api/whiteboards";
+import { idbRemove } from "../../idb";
 
 function formatDate(value) {
   if (!value) return "Unknown date";
@@ -19,8 +20,6 @@ function formatDate(value) {
   });
 }
 
-// Loads a whiteboard's preview image with auth into an object URL, revoking it
-// on unmount so blobs don't leak.
 function Preview({ previewUrl }) {
   const [src, setSrc] = useState(null);
   const [failed, setFailed] = useState(false);
@@ -48,12 +47,20 @@ function Preview({ previewUrl }) {
   }, [previewUrl]);
 
   if (failed) {
-    return <div className="dashboard-preview dashboard-preview-empty">No preview</div>;
+    return (
+      <div className="dashboard-preview dashboard-preview-empty">
+        No preview
+      </div>
+    );
   }
   if (!src) {
-    return <div className="dashboard-preview dashboard-preview-empty">Loading…</div>;
+    return (
+      <div className="dashboard-preview dashboard-preview-empty">Loading…</div>
+    );
   }
-  return <img className="dashboard-preview" src={src} alt="Whiteboard preview" />;
+  return (
+    <img className="dashboard-preview" src={src} alt="Whiteboard preview" />
+  );
 }
 
 export default function Dashboard() {
@@ -63,7 +70,6 @@ export default function Dashboard() {
   const [error, setError] = useState("");
   const [deletingId, setDeletingId] = useState(null);
 
-  // Only accessible when logged in.
   useEffect(() => {
     if (!localStorage.getItem("token")) {
       navigate("/login", { replace: true });
@@ -91,6 +97,15 @@ export default function Dashboard() {
     };
   }, []);
 
+  const handleNewWhiteboard = async () => {
+    localStorage.removeItem("whiteboardCode");
+    localStorage.removeItem("title");
+    localStorage.removeItem("isPublic");
+    localStorage.removeItem("previewUrl");
+    localStorage.removeItem("canvasUrl");
+    idbRemove("canvasLoadData").then(() => navigate("/"));
+  };
+
   const handleDelete = async (id) => {
     if (deletingId) return;
     setDeletingId(id);
@@ -113,12 +128,31 @@ export default function Dashboard() {
     <div className="dashboard-page">
       <Header />
       <div className="dashboard">
+        <div className="dashboard-list dashboard-new-row">
+          <button
+            type="button"
+            className="dashboard-item dashboard-new"
+            onClick={handleNewWhiteboard}
+          >
+            <div className="dashboard-preview dashboard-new-preview">
+              <span className="dashboard-new-plus" aria-hidden="true">
+                +
+              </span>
+            </div>
+            <div className="dashboard-meta">
+              <span className="dashboard-name">New Whiteboard</span>
+              <span className="dashboard-date">Start from a blank canvas</span>
+            </div>
+          </button>
+        </div>
         <h1 className="dashboard-title">My Whiteboards</h1>
         {error && <p className="dashboard-error">{error}</p>}
         {loading ? (
           <p className="dashboard-status">Loading…</p>
         ) : whiteboards.length === 0 ? (
-          <p className="dashboard-status">You don't have any whiteboards yet.</p>
+          <p className="dashboard-status">
+            You don't have any whiteboards yet.
+          </p>
         ) : (
           <ul className="dashboard-list">
             {whiteboards.map((wb) => (
@@ -129,6 +163,9 @@ export default function Dashboard() {
                 >
                   <Preview previewUrl={wb.previewUrl} />
                   <div className="dashboard-meta">
+                    <span className="dashboard-name">
+                      {wb.title || "Untitled Whiteboard"}
+                    </span>
                     <span className="dashboard-date">
                       {formatDate(wb.createdAt)}
                     </span>

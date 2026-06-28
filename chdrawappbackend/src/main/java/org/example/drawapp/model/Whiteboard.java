@@ -3,6 +3,7 @@ package org.example.drawapp.model;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.ColumnDefault;
 import org.example.drawapp.validation.WhiteboardCodeValidator;
 
 import java.time.Instant;
@@ -34,6 +35,14 @@ public class Whiteboard {
 
     @Column(name = "canvas", columnDefinition = "bytea")
     private byte[] canvas;
+
+    @Column(name = "is_public", nullable = false)
+    @ColumnDefault("false")
+    private boolean isPublic = false;
+
+    @Column(name = "title", nullable = false)
+    @ColumnDefault("'Untitled Whiteboard'")
+    private String title;
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;

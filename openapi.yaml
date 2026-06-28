@@ -82,6 +82,7 @@ paths:
         description: The id of the user that owns the whiteboards
         schema:
           type: string
+          format: uuid
     get:
       tags: [Whiteboards]
       summary: List all whiteboards for the given user
@@ -98,6 +99,8 @@ paths:
                   $ref: '#/components/schemas/Whiteboard'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
     post:
       tags: [Whiteboards]
       summary: Create a new whiteboard
@@ -118,6 +121,9 @@ paths:
                     createdAt:
                       type: string
                       format: date-time
+                    title:
+                      type: string
+                      nullable: true
                 preview:
                   type: string
                   format: binary
@@ -144,8 +150,10 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
 
-  /users/{userId}/whiteboards/{id}:
+  /users/{userId}/whiteboards/{code}:
     parameters:
       - name: userId
         in: path
@@ -153,15 +161,14 @@ paths:
         description: The id of the user that owns the whiteboard
         schema:
           type: string
-      - name: id
-        in: path
-        required: true
-        description: The whiteboard id
-        schema:
-          type: string
+          format: uuid
+      - $ref: '#/components/parameters/WhiteboardCode'
     get:
       tags: [Whiteboards]
-      summary: Get a whiteboard by id
+      summary: Get a whiteboard by code
+      description: >-
+        Returns the whiteboard if it is owned by the authenticated user or is
+        publicly visible.
       security:
         - bearerAuth: []
       responses:
@@ -177,7 +184,7 @@ paths:
           $ref: '#/components/responses/NotFound'
     delete:
       tags: [Whiteboards]
-      summary: Delete a whiteboard by id
+      summary: Delete a whiteboard by code
       security:
         - bearerAuth: []
       responses:
@@ -185,10 +192,12 @@ paths:
           description: Whiteboard deleted
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
 
-  /users/{userId}/whiteboards/{id}/preview:
+  /users/{userId}/whiteboards/{code}/preview:
     parameters:
       - name: userId
         in: path
@@ -196,15 +205,14 @@ paths:
         description: The id of the user that owns the whiteboard
         schema:
           type: string
-      - name: id
-        in: path
-        required: true
-        description: The whiteboard id
-        schema:
-          type: string
+          format: uuid
+      - $ref: '#/components/parameters/WhiteboardCode'
     get:
       tags: [Whiteboards]
       summary: Get the preview thumbnail of a whiteboard
+      description: >-
+        Returns the preview for a whiteboard the authenticated user owns or that
+        is publicly visible.
       security:
         - bearerAuth: []
       responses:
@@ -222,6 +230,7 @@ paths:
     patch:
       tags: [Whiteboards]
       summary: Update the preview thumbnail of a whiteboard
+      description: Only the owner of the whiteboard may update its preview.
       security:
         - bearerAuth: []
       requestBody:
@@ -246,7 +255,7 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
-  /users/{userId}/whiteboards/{id}/canvas:
+  /users/{userId}/whiteboards/{code}/canvas:
     parameters:
       - name: userId
         in: path
@@ -254,15 +263,14 @@ paths:
         description: The id of the user that owns the whiteboard
         schema:
           type: string
-      - name: id
-        in: path
-        required: true
-        description: The whiteboard id
-        schema:
-          type: string
+          format: uuid
+      - $ref: '#/components/parameters/WhiteboardCode'
     get:
       tags: [Whiteboards]
       summary: Get the canvas content of a whiteboard
+      description: >-
+        Returns the canvas for a whiteboard the authenticated user owns or that
+        is publicly visible.
       security:
         - bearerAuth: []
       responses:
@@ -280,6 +288,7 @@ paths:
     patch:
       tags: [Whiteboards]
       summary: Update the canvas content of a whiteboard
+      description: Only the owner of the whiteboard may update its canvas.
       security:
         - bearerAuth: []
       requestBody:
@@ -304,12 +313,103 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  /users/{userId}/whiteboards/{code}/title:
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        description: The id of the user that owns the whiteboard
+        schema:
+          type: string
+          format: uuid
+      - $ref: '#/components/parameters/WhiteboardCode'
+    patch:
+      tags: [Whiteboards]
+      summary: Update the title of a whiteboard
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                title:
+                  type: string
+      responses:
+        '200':
+          description: The updated whiteboard
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Whiteboard'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /users/{userId}/whiteboards/{code}/visibility:
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        description: The id of the user that owns the whiteboard
+        schema:
+          type: string
+          format: uuid
+      - $ref: '#/components/parameters/WhiteboardCode'
+    patch:
+      tags: [Whiteboards]
+      summary: Update the public visibility of a whiteboard
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [isPublic]
+              properties:
+                isPublic:
+                  type: boolean
+      responses:
+        '200':
+          description: The updated whiteboard
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Whiteboard'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
 components:
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
+
+  parameters:
+    WhiteboardCode:
+      name: code
+      in: path
+      required: true
+      description: The Base58-encoded whiteboard code
+      schema:
+        type: string
 
   responses:
     BadRequest:
@@ -320,6 +420,12 @@ components:
             $ref: '#/components/schemas/Error'
     Unauthorized:
       description: Authentication is required or has failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Forbidden:
+      description: The caller may not access another user's whiteboards
       content:
         application/json:
           schema:
@@ -370,6 +476,9 @@ components:
       properties:
         id:
           type: string
+        title:
+          type: string
+          nullable: true
         userId:
           type: string
         previewUrl:
@@ -379,6 +488,8 @@ components:
         createdAt:
           type: string
           format: date-time
+        isPublic:
+          type: boolean
 
     Error:
       type: object

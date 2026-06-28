@@ -46,6 +46,40 @@
   cursor: default;
 }
 
+.header-title {
+  font: inherit;
+  font-weight: 600;
+  background: #2a2a2a;
+  color: #e0e0e0;
+  border: 1px solid #3a3a3a;
+  padding: 6px 12px;
+  border-radius: 4px;
+  min-width: 160px;
+  cursor: text;
+}
+
+.header-title:disabled {
+  color: #6a6a6a;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.header-public {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font: inherit;
+  font-weight: 600;
+  color: #e0e0e0;
+  cursor: pointer;
+  user-select: none;
+}
+
+.header-public input {
+  cursor: pointer;
+  margin: 0;
+}
+
 .header-login {
   background: #1d7be3;
   color: #fff;

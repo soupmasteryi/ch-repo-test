@@ -4,6 +4,8 @@ import io.ipfs.multibase.Base58;
 import jakarta.validation.Valid;
 import org.example.drawapp.dto.WhiteboardData;
 import org.example.drawapp.dto.WhiteboardDto;
+import org.example.drawapp.dto.WhiteboardTitleUpdate;
+import org.example.drawapp.dto.WhiteboardVisibilityUpdate;
 import org.example.drawapp.exception.ApiException;
 import org.example.drawapp.model.Whiteboard;
 import org.example.drawapp.security.AuthPrincipal;
@@ -52,11 +54,10 @@ public class WhiteboardController {
 
     @GetMapping("/{code}")
     public WhiteboardDto get(@PathVariable String userId,
-                             @PathVariable @WhiteboardCode String code,
-                             @RequestAttribute(AuthPrincipal.REQUEST_ATTRIBUTE) AuthPrincipal principal) {
-        UUID owner = requireOwner(userId, principal);
+                             @PathVariable @WhiteboardCode String code) {
+        UUID owner = UUID.fromString(userId);
         Long id = whiteboardIdFromCode(code);
-        return WhiteboardDto.from(whiteboardService.get(owner, id));
+        return WhiteboardDto.from(whiteboardService.getPublic(owner, id));
     }
 
     @DeleteMapping("/{code}")
@@ -71,11 +72,10 @@ public class WhiteboardController {
 
     @GetMapping(value = "/{code}/preview", produces = MediaType.IMAGE_PNG_VALUE)
     public ResponseEntity<byte[]> getPreview(@PathVariable String userId,
-                                             @PathVariable @WhiteboardCode String code,
-                                             @RequestAttribute(AuthPrincipal.REQUEST_ATTRIBUTE) AuthPrincipal principal) {
-        UUID owner = requireOwner(userId, principal);
+                                             @PathVariable @WhiteboardCode String code) {
+        UUID owner = UUID.fromString(userId);
         Long id = whiteboardIdFromCode(code);
-        Whiteboard wb = whiteboardService.get(owner, id);
+        Whiteboard wb = whiteboardService.getPublic(owner, id);
         byte[] preview = wb.getPreview();
         if (preview == null) {
             throw ApiException.notFound("Whiteboard has no preview");
@@ -99,11 +99,10 @@ public class WhiteboardController {
 
     @GetMapping(value = "/{code}/canvas", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     public ResponseEntity<byte[]> getCanvas(@PathVariable String userId,
-                                            @PathVariable @WhiteboardCode String code,
-                                            @RequestAttribute(AuthPrincipal.REQUEST_ATTRIBUTE) AuthPrincipal principal) {
-        UUID owner = requireOwner(userId, principal);
+                                            @PathVariable @WhiteboardCode String code) {
+        UUID owner = UUID.fromString(userId);
         Long id = whiteboardIdFromCode(code);
-        Whiteboard wb = whiteboardService.get(owner, id);
+        Whiteboard wb = whiteboardService.getPublic(owner, id);
         byte[] canvas = wb.getCanvas();
         if (canvas == null) {
             throw ApiException.notFound("Whiteboard has no canvas");
@@ -127,6 +126,26 @@ public class WhiteboardController {
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .body(wb.getCanvas());
+    }
+
+    @PatchMapping(value = "/{code}/title", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public WhiteboardDto updateTitle(@PathVariable String userId,
+                                     @PathVariable @WhiteboardCode String code,
+                                     @RequestAttribute(AuthPrincipal.REQUEST_ATTRIBUTE) AuthPrincipal principal,
+                                     @RequestBody @Valid WhiteboardTitleUpdate body) {
+        UUID owner = requireOwner(userId, principal);
+        Long id = whiteboardIdFromCode(code);
+        return WhiteboardDto.from(whiteboardService.updateTitle(owner, id, body.title()));
+    }
+
+    @PatchMapping(value = "/{code}/visibility", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public WhiteboardDto updateVisibility(@PathVariable String userId,
+                                          @PathVariable @WhiteboardCode String code,
+                                          @RequestAttribute(AuthPrincipal.REQUEST_ATTRIBUTE) AuthPrincipal principal,
+                                          @RequestBody @Valid WhiteboardVisibilityUpdate body) {
+        UUID owner = requireOwner(userId, principal);
+        Long id = whiteboardIdFromCode(code);
+        return WhiteboardDto.from(whiteboardService.updateVisibility(owner, id, body.isPublic()));
     }
 
     private ResponseEntity<byte[]> imageResponse(Whiteboard wb, byte[] data) {

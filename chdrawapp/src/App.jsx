@@ -154,19 +154,21 @@ function Home() {
     setLoadError("");
     setShowLoadModal(false);
     setIsLoading(true);
-    try {
-      const { canvas } = await getWhiteboard({
-        userId: localStorage.getItem("userId"),
-        code,
+    getWhiteboard({
+      userId: localStorage.getItem("userId"),
+      code,
+    })
+      .then(({ canvas }) => {
+        setCanvasLoadData(canvas);
+        setTitle(localStorage.getItem("title") ?? "Untitled Whiteboard");
+        setIsPublic(localStorage.getItem("isPublic") === "true");
+      })
+      .catch((err) => {
+        setIsLoading(false);
+        setLoadError(err.message);
+        setShowLoadModal(true);
+        console.error("Failed to load whiteboard from /wb route:", err);
       });
-      setCanvasLoadData(canvas);
-      setTitle(localStorage.getItem("title") ?? "Untitled Whiteboard");
-      setIsPublic(localStorage.getItem("isPublic") === "true");
-    } catch (err) {
-      setIsLoading(false);
-      setLoadError(err.message);
-      setShowLoadModal(true);
-    }
   };
 
   const openLoadModal = () => {
@@ -303,7 +305,7 @@ function Home() {
               <>
                 <p className="modal-body">
                   Use this code to access this whiteboard later. You can
-                  continue making editing this whiteboard, future changes are
+                  continue making edits to this whiteboard, future changes are
                   saved too.
                 </p>
                 <input

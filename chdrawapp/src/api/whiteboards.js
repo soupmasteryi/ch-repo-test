@@ -250,9 +250,12 @@ export async function fetchPreview({ token, previewUrl }) {
 export async function getWhiteboard({ userId, code }) {
   let res;
   try {
-    res = await fetch(`${API_BASE_URL}/users/${userId}/whiteboards/${code}`, {
-      method: "GET",
-    });
+    res = await fetch(
+      `${API_BASE_URL}/users/${userId ?? "00000000-0000-0000-0000-000000000000"}/whiteboards/${code}`,
+      {
+        method: "GET",
+      },
+    );
   } catch (ex) {
     throw ex;
   }
